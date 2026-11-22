@@ -1,6 +1,6 @@
 """
 Free AI helpers used on GitHub's servers:
-  - llm()       : GitHub Models (free, uses the workflow's own GITHUB_TOKEN, needs "models: read")
+  - llm()       : Google Gemini (free key in the GEMINI_API_KEY secret), with a no-key fallback
   - ai_image()  : Pollinations image generation (free; optional POLLINATIONS_KEY secret = faster, no watermark)
 """
 import json
@@ -12,64 +12,132 @@ from pathlib import Path
 
 import requests
 
-# (endpoint, model) pairs tried in order
-ENDPOINTS = [
-    ("https://models.github.ai/inference/chat/completions", "openai/gpt-4.1-mini"),
-    ("https://models.github.ai/inference/chat/completions", "openai/gpt-4o-mini"),
-    ("https://models.inference.ai.azure.com/chat/completions", "gpt-4o-mini"),
-    ("https://models.github.ai/inference/chat/completions", "openai/gpt-4o"),
-]
+GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+# Free-tier Flash models; names change over time, so a few are tried in order (override with GEMINI_MODEL).
+GEMINI_MODELS = ["gemini-flash-latest", "gemini-3.6-flash", "gemini-3.5-flash", "gemini-3-flash-preview",
+                 "gemini-flash-lite-latest", "gemini-3.5-flash-lite"]
+_good_model = [None]
 
 
-def log(*a):
-    print("[ai]", *a, flush=True)
+def has_gemini():
+    return bool(os.environ.get("GEMINI_API_KEY", "").strip())
 
 
-def llm(messages, want_json=False, model=None, temperature=0.8, max_tokens=2500):
-    """Chat completion through GitHub Models (free). Tries a few endpoints/models in turn."""
-    token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
-    if not token:
-        raise RuntimeError("No GITHUB_TOKEN for GitHub Models")
-    tries = [(ENDPOINTS[0][0], model)] if model else ENDPOINTS
-    last = None
-    for url, m in tries:
-        body = {"model": m, "messages": messages, "temperature": temperature, "max_tokens": max_tokens}
-        if want_json:
-            body["response_format"] = {"type": "json_object"}
+def _to_gemini_parts(content):
+    """OpenAI-style content (str or list of text/image_url) -> Gemini parts."""
+    if isinstance(content, str):
+        return [{"text": content}]
+    parts = []
+    for c in content:
+        if c.get("type") == "text":
+            parts.append({"text": c["text"]})
+        elif c.get("type") == "image_url":
+            url = c["image_url"]["url"]
+            if url.startswith("data:"):
+                mime, data = url[5:].split(";base64,", 1)
+                parts.append({"inline_data": {"mime_type": mime, "data": data}})
+        elif "inline_data" in c or "file_data" in c:
+            parts.append(c)
+    return parts
+
+
+def gemini(parts, system=None, want_json=False, temperature=0.8, max_tokens=4096):
+    key = os.environ.get("GEMINI_API_KEY", "").strip()
+    if not key:
+        raise RuntimeError("GEMINI_API_KEY secret is not set")
+    body = {"contents": [{"role": "user", "parts": parts}],
+            "generationConfig": {"temperature": temperature, "maxOutputTokens": max_tokens}}
+    if system:
+        body["systemInstruction"] = {"parts": [{"text": system}]}
+    if want_json:
+        body["generationConfig"]["responseMimeType"] = "application/json"
+    env_model = os.environ.get("GEMINI_MODEL", "").strip()
+    models = ([env_model] if env_model else []) + ([_good_model[0]] if _good_model[0] else []) + GEMINI_MODELS
+    seen, last = set(), None
+    for m in models:
+        if m in seen:
+            continue
+        seen.add(m)
         for attempt in range(3):
             try:
-                r = requests.post(url, json=body, timeout=180, allow_redirects=False, headers={
-                    "Authorization": f"Bearer {token}", "Content-Type": "application/json",
-                    "Accept": "application/json", "X-GitHub-Api-Version": "2022-11-28"})
+                r = requests.post(GEMINI_URL.format(model=m), json=body, timeout=300,
+                                  headers={"x-goog-api-key": key, "Content-Type": "application/json"})
             except requests.RequestException as e:
                 last = f"{m}: {e}"
                 log(last)
                 time.sleep(5)
                 continue
-            ctype = r.headers.get("content-type", "")
             if r.status_code == 429:
-                wait = int(r.headers.get("retry-after", "20") or 20)
-                log(f"{m}: rate limited, waiting {wait}s")
-                time.sleep(min(wait, 90))
+                last = f"{m}: rate limited"
+                log(last + " - waiting 30s")
+                time.sleep(30)
                 continue
-            if r.status_code >= 300 or "json" not in ctype:
-                last = f"{m} @ {url.split('/')[2]}: HTTP {r.status_code} [{ctype}] {r.text[:300]!r}"
+            if r.status_code in (400, 403) and "API key" in r.text:
+                raise RuntimeError("Gemini rejected the API key - check the GEMINI_API_KEY secret. " + r.text[:200])
+            if r.status_code >= 400:
+                last = f"{m}: HTTP {r.status_code} {r.text[:250]}"
                 log(last)
-                if want_json and "response_format" in body and r.status_code in (400, 422):
-                    body.pop("response_format")  # some models reject JSON mode; ask in the prompt instead
-                    continue
-                break
+                break  # try the next model
             try:
-                text = r.json()["choices"][0]["message"]["content"] or ""
-                if not want_json:
-                    return text
-                mm = re.search(r"\{[\s\S]*\}", text)
-                return json.loads(mm.group(0) if mm else text)
+                cand = r.json()["candidates"][0]
+                text = "".join(p.get("text", "") for p in cand["content"]["parts"] if not p.get("thought"))
             except (ValueError, KeyError, IndexError) as e:
-                last = f"{m}: bad reply ({e}): {r.text[:300]!r}"
+                last = f"{m}: empty/blocked reply ({e}) {r.text[:250]}"
                 log(last)
-                time.sleep(3)
-    raise RuntimeError(f"GitHub Models failed: {last}")
+                break
+            _good_model[0] = m
+            if not want_json:
+                return text
+            mm = re.search(r"\{[\s\S]*\}", text)
+            try:
+                return json.loads(mm.group(0) if mm else text)
+            except ValueError as e:
+                last = f"{m}: bad JSON ({e})"
+                log(last)
+                continue
+    raise RuntimeError(f"Gemini failed: {last}")
+
+
+def _pollinations_text(messages, want_json, temperature):
+    """Last-resort free text AI (no key). May be slow or unavailable."""
+    flat = []
+    for msg in messages:
+        c = msg["content"]
+        if isinstance(c, list):
+            c = "\n".join(x.get("text", "") for x in c if x.get("type") == "text")
+        flat.append({"role": msg["role"], "content": c})
+    r = requests.post("https://text.pollinations.ai/openai", timeout=240,
+                      json={"model": "openai", "messages": flat, "temperature": temperature})
+    if r.status_code >= 400 or "json" not in r.headers.get("content-type", ""):
+        raise RuntimeError(f"Pollinations text: HTTP {r.status_code} {r.text[:200]}")
+    text = r.json()["choices"][0]["message"]["content"]
+    if not want_json:
+        return text
+    mm = re.search(r"\{[\s\S]*\}", text)
+    return json.loads(mm.group(0) if mm else text)
+
+
+def llm(messages, want_json=False, temperature=0.8, **_):
+    """Text/vision AI: Gemini (free key) first, then a no-key fallback."""
+    errors = []
+    if has_gemini():
+        system = "\n".join(m["content"] for m in messages if m["role"] == "system" and isinstance(m["content"], str))
+        parts = []
+        for m in messages:
+            if m["role"] != "system":
+                parts += _to_gemini_parts(m["content"])
+        try:
+            return gemini(parts, system=system or None, want_json=want_json, temperature=temperature)
+        except Exception as e:  # noqa: BLE001
+            errors.append(str(e))
+            log("Gemini failed:", e)
+    try:
+        return _pollinations_text(messages, want_json, temperature)
+    except Exception as e:  # noqa: BLE001
+        errors.append(str(e))
+        log("Free fallback AI failed:", e)
+    hint = "" if has_gemini() else " Add a free GEMINI_API_KEY secret (see the guide)."
+    raise RuntimeError("No AI could write the script." + hint + " Details: " + " | ".join(errors)[:600])
 
 
 _last_img = [0.0]

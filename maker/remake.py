@@ -149,7 +149,7 @@ def from_file(path, tmp):
 
 
 # ------------------------------------------------------------ writing ----
-def write_script(src, meta):
+def instructions_for(meta, has_video):
     lang = meta.get("language", "bn")
     lname = LANG_NAMES.get(lang, lang)
     style = meta.get("style", "normal")
@@ -157,20 +157,18 @@ def write_script(src, meta):
     rules = ai_tools._channel_rules({"about": about, "channel_name": meta.get("channel_name", "")})
     words = WORDS.get(lang, "100-130 words")
     note = meta.get("note", "")
-    text_part = (
-        f"SOURCE VIDEO (for inspiration only)\nTitle: {src['title'] or '-'}\n"
-        f"Description: {src['description'] or '-'}\nWhat is said: {src['transcript'] or '(no speech found)'}\n"
-    )
-    instructions = f"""You remake short videos for the YouTube channel "{meta.get('channel_name', '')}".
+    islamic = "islam" in about.lower() or "ইসলাম" in about
+    return f"""You remake short videos for the YouTube channel "{meta.get('channel_name', '')}".
 Channel: {about or '-'}
-Write a NEW, ORIGINAL YouTube Short on the SAME core idea/lesson as the source video{(' (the pictures show what the video looks like)') if src['frames'] else ''}.
+{'Watch and listen to the attached source video carefully.' if has_video else 'Read the source video information below.'}
+Write a NEW, ORIGINAL YouTube Short on the SAME core idea/lesson/story as the source video.
 
 Rules:
 - Write everything (title, script, description, tags) in {lname}.
 - Use completely new wording, a new hook and your own structure. Never copy sentences or more than 4 words in a row from the source (well-known scripture or proverbs may be quoted accurately).
 - Do not mention the source video or its creator.
 - Spoken length 40-55 seconds: about {words}. Short, clear spoken sentences, each ending with a full stop / dari (।) / ! / ?.
-- First sentence = a strong hook. End with a takeaway{', short dua' if 'islam' in about.lower() or 'ইসলাম' in about else ''} or a question to the viewer.
+- First sentence = a strong hook. End with a takeaway{', short dua' if islamic else ''} or a question to the viewer.
 - Only state religious quotes, hadith or facts you are certain are accurate; never invent references or numbers.
 - Tone: {'slow, emotional, cinematic storytelling' if style == 'cinematic' else 'clear, warm and engaging'}.
 - Split the script into 4-7 scenes. For each scene give one English image prompt (max 35 words) for an AI image generator: one consistent visual style, vertical picture, no text, no logos, no real or famous people. {rules}
@@ -179,23 +177,82 @@ Rules:
 Return JSON only:
 {{"title": "under 70 characters", "description": "1-2 sentences", "tags": ["4-8 tags"],
   "scenes": [{{"image_prompt": "...", "lines": ["sentence", "sentence"]}}]}}"""
-    content = [{"type": "text", "text": instructions + "\n\n" + text_part}]
-    for f in src["frames"][:4]:
-        content.append({"type": "image_url", "image_url": {"url": "data:image/jpeg;base64," + f, "detail": "low"}})
-    msgs = [{"role": "system", "content": "You are a skilled short-video scriptwriter. Reply with valid JSON only."},
-            {"role": "user", "content": content if src["frames"] else content[0]["text"]}]
-    try:
-        data = ai_tools.llm(msgs, want_json=True)
-    except Exception:
-        if not src["frames"]:
-            raise
-        log("Vision request failed, retrying with text only")
-        msgs[1]["content"] = content[0]["text"]
-        data = ai_tools.llm(msgs, want_json=True)
-    scenes = [s for s in data.get("scenes", []) if s.get("lines")]
+
+
+SYSTEM = "You are a skilled short-video scriptwriter. Reply with valid JSON only."
+
+
+def _scenes_from(data):
+    scenes = [sc for sc in (data.get("scenes") or []) if sc.get("lines")]
     if not scenes:
         raise RuntimeError("AI did not return a script")
     return data, scenes
+
+
+def write_script(src, meta):
+    """Text route: transcript + a few frames -> any AI."""
+    text_part = (
+        f"SOURCE VIDEO (for inspiration only)\nTitle: {src['title'] or '-'}\n"
+        f"Description: {src['description'] or '-'}\nWhat is said: {src['transcript'] or '(no speech found)'}\n"
+    )
+    content = [{"type": "text", "text": instructions_for(meta, False) + "\n\n" + text_part}]
+    for f in src["frames"][:4]:
+        content.append({"type": "image_url", "image_url": {"url": "data:image/jpeg;base64," + f, "detail": "low"}})
+    msgs = [{"role": "system", "content": SYSTEM},
+            {"role": "user", "content": content if src["frames"] else content[0]["text"]}]
+    return _scenes_from(ai_tools.llm(msgs, want_json=True))
+
+
+def small_video(path, tmp):
+    """Shrink a video so it fits in one request (<~15 MB)."""
+    out = tmp / "small.mp4"
+    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(path), "-t", "180",
+                    "-vf", "scale=-2:480", "-r", "15", "-c:v", "libx264", "-preset", "veryfast", "-crf", "32",
+                    "-c:a", "aac", "-b:a", "64k", "-ac", "1", str(out)])
+    if not out.exists() or out.stat().st_size > 19 * 1048576:
+        raise RuntimeError("Video too long/large to read (keep sources under 3 minutes).")
+    return out
+
+
+def is_youtube(url):
+    return bool(re.search(r"(youtube\.com|youtu\.be)/", url))
+
+
+def download_any(url, tmp):
+    """Non-YouTube link: try a direct download, then yt-dlp."""
+    import requests
+    try:
+        r = requests.get(url, timeout=120, stream=True)
+        if r.ok and r.headers.get("content-type", "").startswith(("video/", "application/octet-stream")):
+            p = tmp / "src.download"
+            with open(p, "wb") as fh:
+                for chunk in r.iter_content(1 << 20):
+                    fh.write(chunk)
+            if _find_video(tmp):
+                return _find_video(tmp)
+    except Exception as e:  # noqa: BLE001
+        log("Direct download failed:", e)
+    import yt_dlp
+    with yt_dlp.YoutubeDL({"quiet": True, "no_warnings": True, "noprogress": True, "noplaylist": True,
+                           "outtmpl": str(tmp / "src.%(ext)s"),
+                           "format": "best[height<=480]/worst"}) as y:
+        y.extract_info(url, download=True)
+    v = _find_video(tmp)
+    if not v:
+        raise RuntimeError("Could not download this link.")
+    return v
+
+
+def write_script_gemini(kind, ref, meta, tmp):
+    """Gemini watches the video itself (YouTube link or file) and writes the new script."""
+    if kind == "url" and is_youtube(ref):
+        vpart = {"file_data": {"file_uri": ref}}
+    else:
+        path = (ROOT / ref) if kind == "file" else download_any(ref, tmp)
+        sv = small_video(path, tmp)
+        vpart = {"inline_data": {"mime_type": "video/mp4", "data": base64.b64encode(sv.read_bytes()).decode()}}
+    data = ai_tools.gemini([vpart, {"text": instructions_for(meta, True)}], system=SYSTEM, want_json=True)
+    return _scenes_from(data)
 
 
 def process_job(job: Path):
@@ -218,21 +275,27 @@ def process_job(job: Path):
         name = f"{job.stem}-{n}"
         log(f"--- Remake {n}/{len(sources)}: {ref}")
         try:
+            if kind == "file":
+                p = (ROOT / ref).resolve()
+                if not str(p).startswith(str(ROOT)) or not p.exists():
+                    raise FileNotFoundError(f"Uploaded file not found: {ref}")
+            data = scenes = None
             with tempfile.TemporaryDirectory() as td:
                 tmp = Path(td)
-                if kind == "url":
-                    src = from_url(ref, tmp)
-                else:
-                    p = (ROOT / ref).resolve()
-                    if not str(p).startswith(str(ROOT)) or not p.exists():
-                        raise FileNotFoundError(f"Uploaded file not found: {ref}")
-                    src = from_file(p, tmp)
-            if not (src["transcript"] or src["title"] or src["frames"]):
-                raise RuntimeError("Could not read this video (YouTube may be blocking GitHub's servers). "
-                                   "Download it and upload the file on the Remake page instead.")
-            log(f"Read source: title={src['title'][:60]!r}, transcript {len(src['transcript'])} chars, "
-                f"{len(src['frames'])} frames")
-            data, scenes = write_script(src, meta)
+                if ai_tools.has_gemini():
+                    try:
+                        log("Gemini is watching the video…")
+                        data, scenes = write_script_gemini(kind, ref, meta, tmp)
+                    except Exception as e:  # noqa: BLE001
+                        log("Gemini video route failed, trying the transcript route ->", e)
+                if scenes is None:
+                    src = from_url(ref, tmp) if kind == "url" else from_file(ROOT / ref, tmp)
+                    if not (src["transcript"] or src["title"] or src["frames"]):
+                        raise RuntimeError("Could not read this video (YouTube may be blocking GitHub's servers). "
+                                           "Download it and upload the file on the Remake page instead.")
+                    log(f"Read source: title={src['title'][:60]!r}, transcript {len(src['transcript'])} chars, "
+                        f"{len(src['frames'])} frames")
+                    data, scenes = write_script(src, meta)
             head = [f"{k}: {meta[k]}" for k in keep if meta.get(k)]
             title = str(data.get("title", "")).replace("\n", " ").strip()
             if title:
