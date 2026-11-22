@@ -114,6 +114,13 @@ def resolve_settings(cfg, meta):
         out["subtitle_max_chars"] = min(int(out["subtitle_max_chars"]), 16)
     elif lang != "bn" and "subtitle_max_chars" not in ch:
         out["subtitle_max_chars"] = 32
+    # colours chosen on the Shorts Studio page (sent with each script)
+    hexes = re.findall(r"#?[0-9a-fA-F]{6}", str(meta.get("colors", "")))
+    if len(hexes) >= 2:
+        out["background_colors"] = ["#" + h.lstrip("#") for h in hexes[:2]]
+    hl = re.findall(r"#?[0-9a-fA-F]{6}", str(meta.get("highlight", "")))
+    if hl:
+        out["highlight_color"] = "#" + hl[0].lstrip("#")
     out["language"] = lang
     out["channel_name"] = meta.get("channel_name") or ch.get("name") or cfg.get("channel_name", "")
     out["_channel"] = cid
