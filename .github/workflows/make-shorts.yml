@@ -30,7 +30,8 @@ jobs:
       - name: Any scripts waiting?
         id: check
         run: |
-          if ls scripts/*.txt remake/*.txt >/dev/null 2>&1 || ls scripts/*.txt >/dev/null 2>&1 || ls remake/*.txt >/dev/null 2>&1; then echo "go=yes" >> "$GITHUB_OUTPUT"; ls scripts/*.txt remake/*.txt 2>/dev/null;
+          n=$( (ls scripts/*.txt remake/*.txt 2>/dev/null || true) | wc -l )
+          if [ "$n" -gt 0 ]; then echo "go=yes" >> "$GITHUB_OUTPUT"; (ls scripts/*.txt remake/*.txt 2>/dev/null || true);
           else echo "go=no" >> "$GITHUB_OUTPUT"; echo "No scripts waiting - nothing to do."; fi
 
       - name: Install video tools and Bangla font
