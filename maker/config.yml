@@ -1,0 +1,86 @@
+# ===================================================================
+#  SETTINGS  /  সেটিংস
+#  Edit this file on github.com (pencil icon) to change how shorts look.
+#  Lines starting with # are notes and are ignored.
+# ===================================================================
+
+# ---------- VOICE / কণ্ঠ ----------
+# omnivoice = free AI voice (same OmniVoice you use on your PC)
+# edge      = Microsoft Bangla voice (free, faster). Used automatically as backup.
+voice_engine: omnivoice
+
+# OmniVoice voice style. Mix: male/female, child/teenager/young adult/middle-aged/elderly,
+# very low pitch/low pitch/moderate pitch/high pitch/very high pitch
+# The first video creates a "channel voice" and every video after uses the SAME voice.
+# Change this line to get a new voice. To use YOUR OWN voice, see the guide (voice/my_voice.wav).
+voice_style: "male, middle-aged, low pitch"
+
+voice_speed: 1.0        # 0.9 = slower, 1.1 = faster
+quality_steps: 32       # 32 = best quality, 16 = twice as fast
+pause_seconds: 0.35     # silence between sentences
+
+# Backup Microsoft voices: bn-BD-PradeepNeural (male), bn-BD-NabanitaNeural (female),
+# bn-IN-BashkarNeural (male, Kolkata), bn-IN-TanishaaNeural (female, Kolkata)
+edge_voice: bn-BD-PradeepNeural
+
+# ---------- LOOK / ডিজাইন ----------
+channel_name: "নফসে মুতমাইন্নাহ"     # small text at the top ("" = none)
+font: "Noto Sans Bengali"
+font_size: 82
+text_color: "#FFFFFF"
+highlight_color: "#FFD75E"            # colour of the top text
+subtitle_position: 62                 # % from top of the screen
+subtitle_max_chars: 40                # letters per subtitle line-group
+
+# Background: put photos/videos in the "backgrounds" folder.
+# If that folder is empty, this 2-colour moving gradient is used:
+background_colors: ["#0b1d3a", "#1e4f8a"]
+image_seconds: 5          # each photo stays this many seconds (slow zoom)
+darken: 0.35              # 0 = no darkening, 0.6 = very dark (text easier to read)
+
+# Free stock videos from Pexels (needs PEXELS_API_KEY secret, see guide). "" = off
+pexels_query: ""          # e.g. "mosque", "night sky", "nature"
+
+background_music_volume: 0.10   # only used if you put a file in the "music" folder
+
+# ---------- YOUTUBE ----------
+youtube_upload: false     # true = upload automatically (needs YouTube secrets, see guide)
+privacy: private          # private / unlisted / public
+category_id: "27"         # 27 = Education, 22 = People & Blogs, 29 = Nonprofits
+default_tags: ["islamic shorts", "bangla waz", "ইসলামিক", "shorts"]
+default_description: "#shorts #islamic #bangla"
+
+# ---------- STYLE ----------
+default_style: normal     # used when a script doesn't say: normal or cinematic
+
+# ---------- CHANNELS / চ্যানেল ----------
+# Each script says which channel it is for (the Shorts Studio page adds "channel: <id>").
+# A channel can change ANY setting above. Each channel gets its OWN saved voice (voice/<id>/),
+# and can have its own photos in backgrounds/<id>/ and music in music/<id>/.
+channels:
+  nafse:
+    name: "নফসে মুতমাইন্নাহ"
+    language: bn
+    voice_style: "male, middle-aged, low pitch"
+    background_colors: ["#0b1d3a", "#1e4f8a"]
+    default_tags: ["islamic shorts", "bangla waz", "ইসলামিক", "shorts"]
+    default_description: "#shorts #islamic #bangla"
+  tinytoon:
+    name: "Tiny Toon Tales"
+    language: en            # English voice + English subtitles
+    voice_style: "female, young adult, high pitch"
+    background_colors: ["#ff9a3c", "#7b5cff"]
+    highlight_color: "#FFE066"
+    default_tags: ["kids stories", "bedtime stories", "cartoon", "shorts"]
+    default_description: "#shorts #kidsstories #bedtimestories"
+  vistara:
+    name: "Vistara Mind"
+    language: bn            # change to en for English
+    voice_style: "male, young adult, moderate pitch"
+    background_colors: ["#120d2b", "#3a2a7a"]
+    highlight_color: "#B9A6FF"
+    default_tags: ["motivation", "mindset", "shorts"]
+    default_description: "#shorts #motivation"
+
+# ---------- QUEUE ----------
+max_per_run: 5            # how many scripts to make in one go (the rest wait for the next run)

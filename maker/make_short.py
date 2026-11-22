@@ -57,11 +57,41 @@ VOICE_SAMPLES = {
     "bn": "আসসালামু আলাইকুম। আজ আমরা এমন একটি কথা শুনব, যা আমাদের হৃদয়কে শান্ত করবে।",
     "en": "Hello friends! Today I have a wonderful little story to share with you.",
 }
-# Defaults per language (a channel or config.yml can override any of them)
-LANG_DEFAULTS = {
-    "bn": {"font": "Noto Sans Bengali", "edge_voice": "bn-BD-PradeepNeural"},
-    "en": {"font": "Noto Sans", "edge_voice": "en-US-JennyNeural", "subtitle_max_chars": 32},
+# Any language OmniVoice knows works. These give each language a good font and a backup voice.
+# (code: (font, backup Microsoft voice))
+LANGS = {
+    "bn": ("Noto Sans Bengali", "bn-BD-PradeepNeural"),
+    "en": ("Noto Sans", "en-US-JennyNeural"),
+    "hi": ("Noto Sans Devanagari", "hi-IN-MadhurNeural"),
+    "ur": ("Noto Naskh Arabic", "ur-PK-AsadNeural"),
+    "ar": ("Noto Naskh Arabic", "ar-SA-HamedNeural"),
+    "ne": ("Noto Sans Devanagari", "ne-NP-SagarNeural"),
+    "ta": ("Noto Sans Tamil", "ta-IN-ValluvarNeural"),
+    "te": ("Noto Sans Telugu", "te-IN-MohanNeural"),
+    "mr": ("Noto Sans Devanagari", "mr-IN-ManoharNeural"),
+    "gu": ("Noto Sans Gujarati", "gu-IN-NiranjanNeural"),
+    "pa": ("Noto Sans Gurmukhi", "pa-IN-OjasNeural"),
+    "es": ("Noto Sans", "es-ES-AlvaroNeural"),
+    "fr": ("Noto Sans", "fr-FR-HenriNeural"),
+    "de": ("Noto Sans", "de-DE-ConradNeural"),
+    "it": ("Noto Sans", "it-IT-DiegoNeural"),
+    "pt": ("Noto Sans", "pt-BR-AntonioNeural"),
+    "id": ("Noto Sans", "id-ID-ArdiNeural"),
+    "ms": ("Noto Sans", "ms-MY-OsmanNeural"),
+    "tr": ("Noto Sans", "tr-TR-AhmetNeural"),
+    "ru": ("Noto Sans", "ru-RU-DmitryNeural"),
+    "ja": ("Noto Sans CJK JP", "ja-JP-KeitaNeural"),
+    "ko": ("Noto Sans CJK KR", "ko-KR-InJoonNeural"),
+    "zh": ("Noto Sans CJK SC", "zh-CN-YunxiNeural"),
 }
+SERIF = {  # cinematic style uses a serif font where one exists
+    "Noto Sans Bengali": "Noto Serif Bengali", "Noto Sans": "Noto Serif",
+    "Noto Sans Devanagari": "Noto Serif Devanagari", "Noto Sans Tamil": "Noto Serif Tamil",
+    "Noto Sans Telugu": "Noto Serif Telugu", "Noto Sans Gujarati": "Noto Serif Gujarati",
+    "Noto Sans Gurmukhi": "Noto Serif Gurmukhi", "Noto Sans CJK JP": "Noto Serif CJK JP",
+    "Noto Sans CJK KR": "Noto Serif CJK KR", "Noto Sans CJK SC": "Noto Serif CJK SC",
+}
+NO_SPACE_LANGS = {"ja", "zh"}
 
 
 def resolve_settings(cfg, meta):
@@ -69,18 +99,30 @@ def resolve_settings(cfg, meta):
     channels = cfg.get("channels") or {}
     cid = re.sub(r"[^a-z0-9_-]", "", str(meta.get("channel", "")).strip().lower())
     ch = channels.get(cid) or {}
-    lang = str(meta.get("language") or ch.get("language") or cfg.get("language") or "bn").lower()[:2]
-    lang = lang if lang in LANG_DEFAULTS else "bn"
+    lang = re.sub(r"[^a-z]", "", str(meta.get("language") or ch.get("language") or cfg.get("language") or "bn").lower())[:3] or "bn"
+    font, edge = LANGS.get(lang, ("Noto Sans", ""))
     base = {k: v for k, v in cfg.items() if k not in ("channels", "cinematic", "normal")}
-    out = {**LANG_DEFAULTS[lang], **base, **{k: v for k, v in ch.items() if k != "name"}}
-    if lang != "bn" and "Bengali" in str(out.get("font", "")) and "font" not in ch:
-        out["font"] = LANG_DEFAULTS[lang]["font"]
-    if lang != "bn" and str(out.get("edge_voice", "")).startswith("bn-") and "edge_voice" not in ch:
-        out["edge_voice"] = LANG_DEFAULTS[lang]["edge_voice"]
+    if lang != "bn":  # the top-level config.yml font/voice are for Bangla
+        base.pop("font", None)
+        base.pop("edge_voice", None)
+    out = {"font": font, "edge_voice": edge or "en-US-JennyNeural", **base,
+           **{k: v for k, v in ch.items() if k != "name"}}
+    if lang != str(ch.get("language", lang)).lower():  # this video overrides the channel language
+        out["font"], out["edge_voice"] = font, edge or "en-US-JennyNeural"
+    if lang in NO_SPACE_LANGS:
+        out.setdefault("subtitle_max_chars", 16)
+        out["subtitle_max_chars"] = min(int(out["subtitle_max_chars"]), 16)
+    elif lang != "bn" and "subtitle_max_chars" not in ch:
+        out["subtitle_max_chars"] = 32
     out["language"] = lang
     out["channel_name"] = meta.get("channel_name") or ch.get("name") or cfg.get("channel_name", "")
     out["_channel"] = cid
-    out["_voice_dir"] = str(VOICE_DIR / cid) if cid else str(VOICE_DIR)
+    vdir = VOICE_DIR / (cid or "default") / lang
+    # keep the Bangla voice made before channels existed
+    if lang == "bn" and cid in ("", "nafse") and not (vdir / "channel_voice.wav").exists() \
+            and (VOICE_DIR / "channel_voice.wav").exists():
+        vdir = VOICE_DIR
+    out["_voice_dir"] = str(vdir)
 
     style = str(meta.get("style") or out.get("default_style", "normal")).strip().lower()
     style = STYLE_ALIASES.get(style, style)
@@ -88,8 +130,8 @@ def resolve_settings(cfg, meta):
         log(f"Unknown style '{style}', using normal")
         style = "normal"
     preset = dict(STYLE_PRESETS[style])
-    if lang != "bn" and "font" in preset:
-        preset["font"] = preset["font"].replace(" Bengali", "")
+    if "font" in preset:  # cinematic: serif version of this language's font
+        preset["font"] = SERIF.get(out["font"], out["font"])
     out = {**out, **preset, **(cfg.get(style) or {}), **(ch.get(style) or {})}
     out["_style"] = style
     return out, cid
@@ -144,12 +186,12 @@ def split_sentences(text):
         para = re.sub(r"\s+", " ", para).strip()
         if not para:
             continue
-        parts = re.split(r"(?<=[।?!৷.;])\s+", para)
+        parts = re.split(r"(?<=[।?!৷.;؟۔])\s+|(?<=[。！？])", para)
         out += [p.strip() for p in parts if p.strip()]
     # glue very short bits to the previous sentence (better rhythm)
     merged = []
     for s in out:
-        if merged and len(s) < 8:
+        if merged and len(s) < 4:
             merged[-1] += " " + s
         else:
             merged.append(s)
@@ -160,9 +202,12 @@ def subtitle_chunks(sentence, max_chars):
     """Split one sentence into short on-screen pieces."""
     if len(sentence) <= max_chars:
         return [sentence]
-    pieces = [p.strip() for p in re.split(r"(?<=[,،;:—–-])\s+", sentence) if p.strip()]
+    pieces = [p.strip() for p in re.split(r"(?<=[,،;:—–-])\s+|(?<=[，、])", sentence) if p.strip()]
     chunks = []
     for p in pieces:
+        if " " not in p and len(p) > max_chars:  # Chinese/Japanese: no spaces, cut by length
+            chunks += [p[i:i + max_chars] for i in range(0, len(p), max_chars)]
+            continue
         words, cur = p.split(" "), ""
         for w in words:
             if cur and len(cur) + 1 + len(w) > max_chars:
@@ -205,10 +250,17 @@ class OmniVoiceTTS:
         """Same voice in every video: your own recording, or a saved 'channel voice'."""
         vdir = Path(cfg.get("_voice_dir", VOICE_DIR))
         self.lang = cfg.get("language", "bn")
-        sample_text = VOICE_SAMPLES.get(self.lang, VOICE_SAMPLES["bn"])
-        own = next((p for p in vdir.glob("my_voice.*") if p.suffix.lower() in AUD_EXT), None) if vdir.is_dir() else None
+        sample_text = VOICE_SAMPLES.get(self.lang) or cfg.get("_first_sentence") or VOICE_SAMPLES["en"]
+        # your own recording: voice/<channel>/<language>/, then voice/<channel>/, then voice/ (Bangla only)
+        look = [vdir, vdir.parent] + ([VOICE_DIR] if self.lang == "bn" else [])
+        own = None
+        for d in look:
+            if d.is_dir():
+                own = next((p for p in d.glob("my_voice.*") if p.suffix.lower() in AUD_EXT), None)
+                if own:
+                    break
         if own:
-            txt = vdir / "my_voice.txt"
+            txt = own.with_suffix(".txt")
             ref_text = txt.read_text(encoding="utf-8").strip() if txt.exists() else None
             if ref_text is None:
                 log("voice/my_voice.txt not found - transcribing your voice sample automatically")
@@ -333,6 +385,7 @@ def write_ass(path, cues, cfg, title_text):
     pos_y = int(cfg.get("subtitle_position", 62))  # % from top
     margin_v = int(H * (100 - pos_y) / 100)
     font = cfg.get("font", "Noto Sans Bengali")
+    enc = -1 if cfg.get("language") in ("ar", "ur", "fa", "he", "ps", "sd") else 1  # -1 = right-to-left aware
     lines = [
         "[Script Info]", "ScriptType: v4.00+", f"PlayResX: {W}", f"PlayResY: {H}",
         "WrapStyle: 0", "ScaledBorderAndShadow: yes", "",
@@ -340,8 +393,8 @@ def write_ass(path, cues, cfg, title_text):
         "Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, "
         "Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, "
         "Shadow, Alignment, MarginL, MarginR, MarginV, Encoding",
-        f"Style: Sub,{font},{fs},{col},{col},&H00000000,&H96000000,1,0,0,0,100,100,0,0,1,6,3,2,90,90,{margin_v},1",
-        f"Style: Top,{font},{int(fs*0.75)},{hl},{hl},&H00000000,&H96000000,1,0,0,0,100,100,0,0,1,4,2,8,80,80,150,1",
+        f"Style: Sub,{font},{fs},{col},{col},&H00000000,&H96000000,1,0,0,0,100,100,0,0,1,6,3,2,90,90,{margin_v},{enc}",
+        f"Style: Top,{font},{int(fs*0.75)},{hl},{hl},&H00000000,&H96000000,1,0,0,0,100,100,0,0,1,4,2,8,80,80,150,{enc}",
         "", "[Events]",
         "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text",
     ]
@@ -352,8 +405,11 @@ def write_ass(path, cues, cfg, title_text):
         pop = r"{\fad(250,200)}"
     else:
         pop = r"{\fad(80,60)\fscx88\fscy88\t(0,140,\fscx100\fscy100)}"
+    rtl = cfg.get("language") in ("ar", "ur", "fa", "he", "ps", "sd")
     for a, b, text in cues:
         text = text.replace("{", "(").replace("}", ")")
+        if rtl:
+            text = "\u200f" + text + "\u200f"
         lines.append(f"Dialogue: 1,{ass_time(a)},{ass_time(b)},Sub,,0,0,0,,{pop}{text}")
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
@@ -441,6 +497,7 @@ def make_short(script_path: Path, cfg=None, out_dir: Path = None):
     sentences = split_sentences(body)
     name = script_path.stem
     cfg, cid = resolve_settings(cfg, meta)
+    cfg["_first_sentence"] = sentences[0] if sentences else ""
     style = cfg["_style"]
     log(f"=== {name}: {len(sentences)} sentences | channel: {cid or 'default'} "
         f"({cfg['channel_name']}) | language: {cfg['language']} | style: {style} ===")
