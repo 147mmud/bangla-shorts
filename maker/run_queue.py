@@ -21,7 +21,7 @@ def git(*args, check=True):
 
 
 def save_progress(message):
-    git("add", "-A", "scripts", "voice", "results.md")
+    git("add", "-A", "scripts", "voice", "results.md", "remake")
     if git("diff", "--cached", "--quiet", check=False).returncode == 0:
         return
     git("commit", "-m", message)
@@ -56,12 +56,44 @@ def add_result(line):
         f.write(line + "\n")
 
 
+def run_remakes():
+    """remake/*.txt -> new scripts in scripts/ (made into videos right after)."""
+    jobs = sorted((ROOT / "remake").glob("*.txt")) if (ROOT / "remake").is_dir() else []
+    if not jobs:
+        return 0
+    import remake
+    fails = 0
+    for job in jobs:
+        when = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
+        log(f"=== Remake job {job.name} ===")
+        done_dir = ROOT / "remake" / "done"
+        done_dir.mkdir(parents=True, exist_ok=True)
+        try:
+            for out, err, ref, stem in remake.process_job(job):
+                if err:
+                    fails += 1
+                    fdir = ROOT / "scripts" / "failed"
+                    fdir.mkdir(parents=True, exist_ok=True)
+                    (fdir / f"{stem}.error.txt").write_text(f"Source: {ref}\n\n{err}\n", encoding="utf-8")
+                    add_result(f"| {when} | {stem}.txt (remake of {ref[:60]}) | FAILED - see scripts/failed/{stem}.error.txt | - |")
+            job.rename(done_dir / job.name)
+        except Exception as e:  # noqa: BLE001
+            fails += 1
+            traceback.print_exc()
+            job.rename(done_dir / job.name)
+            (done_dir / f"{job.stem}.error.txt").write_text(f"{e}\n\n{traceback.format_exc()}", encoding="utf-8")
+            add_result(f"| {when} | {job.name} (remake) | FAILED - see remake/done/{job.stem}.error.txt | - |")
+        save_progress(f"Remake job: {job.name} [skip ci]")
+    return fails
+
+
 def main():
     cfg = load_config()
+    remake_fails = run_remakes()
     waiting = sorted(p for p in (ROOT / "scripts").glob("*.txt"))
     if not waiting:
         log("No scripts waiting. Put a .txt file in the scripts folder.")
-        return 0
+        return 1 if remake_fails else 0
     limit = int(cfg.get("max_per_run", 5))
     log(f"{len(waiting)} script(s) waiting; making up to {limit} now")
     (ROOT / "scripts" / "done").mkdir(exist_ok=True)
@@ -93,7 +125,7 @@ def main():
     left = len(waiting) - min(limit, len(waiting))
     if left:
         log(f"{left} script(s) still waiting - they will be made in the next run.")
-    return 1 if failures else 0
+    return 1 if (failures or remake_fails) else 0
 
 
 if __name__ == "__main__":

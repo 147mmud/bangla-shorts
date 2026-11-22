@@ -205,6 +205,38 @@ def split_sentences(text):
     return merged
 
 
+SCENE_RE = re.compile(r"^\s*\[(?:img|image|scene|ছবি|দৃশ্য)\s*:\s*(.+?)\]\s*$", re.I)
+
+
+def split_scenes(body):
+    """Script lines like "[img: a mosque at sunrise]" start a new AI picture.
+    Returns (sentences, scene_index_per_sentence, scene_prompts)."""
+    prompts, texts, cur = [], [], []
+    for line in body.split("\n"):
+        m = SCENE_RE.match(line)
+        if m:
+            if cur or prompts:
+                texts.append("\n".join(cur))
+            prompts.append(m.group(1).strip())
+            cur = []
+        else:
+            cur.append(line)
+    texts.append("\n".join(cur))
+    if not prompts:  # no scene markers
+        return split_sentences(body), None, []
+    if len(texts) > len(prompts):  # text before the first marker joins scene 1
+        first = texts.pop(0)
+        texts[0] = (first + "\n" + texts[0]).strip()
+    sentences, idx = [], []
+    for k, t in enumerate(texts):
+        ss = split_sentences(t)
+        sentences += ss
+        idx += [k] * len(ss)
+    keep = sorted(set(idx))
+    remap = {old: new for new, old in enumerate(keep)}
+    return sentences, [remap[i] for i in idx], [prompts[i] for i in keep]
+
+
 def subtitle_chunks(sentence, max_chars):
     """Split one sentence into short on-screen pieces."""
     if len(sentence) <= max_chars:
@@ -353,7 +385,7 @@ def build_voice(tts, sentences, cfg, max_chars):
     """Speak sentence by sentence -> one track + exact subtitle timings."""
     gap = float(cfg.get("pause_seconds", 0.35))
     track = [np.zeros(int(SR * 0.3), dtype=np.float32)]
-    t, cues = 0.3, []
+    t, cues, spans = 0.3, [], []
     for i, s in enumerate(sentences, 1):
         log(f"Voice {i}/{len(sentences)}: {s[:50]}")
         a = tts.say(s)
@@ -366,11 +398,13 @@ def build_voice(tts, sentences, cfg, max_chars):
             cues.append((ct, ct + d, c))
             ct += d
         track += [a, np.zeros(int(SR * gap), dtype=np.float32)]
+        spans.append((t, t + dur))
         t += dur + gap
     track.append(np.zeros(int(SR * 0.6), dtype=np.float32))
     audio = np.concatenate(track)
     peak = float(np.max(np.abs(audio))) or 1.0
     audio = audio * min(1.0, 0.95 / peak)
+    build_voice.spans = spans
     return audio, cues
 
 
@@ -495,13 +529,77 @@ def make_background(duration, cfg, tmp, query, cid=""):
     return out
 
 
+def make_ai_background(duration, sentences, scene_idx, prompts, cfg, tmp, cid, query):
+    """One AI picture per scene, each shown (with slow zoom) while its sentences are spoken."""
+    import ai_tools
+    spans = getattr(build_voice, "spans", [])
+    style = ""
+    if not prompts:
+        n = max(3, min(8, round(duration / 6)))
+        try:
+            groups, prompts, style = ai_tools.scene_prompts(sentences, cfg, n)
+        except Exception as e:  # noqa: BLE001
+            log("Could not write picture ideas, using normal background ->", e)
+            return make_background(duration, cfg, tmp, query, cid)
+        scene_idx, k = [], 0
+        for gi, g in enumerate(groups):
+            scene_idx += [gi] * len(g)
+        scene_idx = (scene_idx + [len(groups) - 1] * len(sentences))[:len(sentences)]
+    if cfg.get("_style") == "cinematic":
+        style = (style + ", cinematic film still, dramatic warm light, shallow depth of field").strip(", ")
+    elif cfg.get("ai_image_style"):
+        style = (style + ", " + cfg["ai_image_style"]).strip(", ")
+
+    # start time of each scene = start of its first sentence
+    starts = {}
+    for i, k in enumerate(scene_idx):
+        if k not in starts and i < len(spans):
+            starts[k] = spans[i][0]
+    order = sorted(starts)
+    bounds = []
+    for j, k in enumerate(order):
+        a = 0.0 if j == 0 else starts[k]
+        b = starts[order[j + 1]] if j + 1 < len(order) else duration
+        bounds.append((k, a, b))
+
+    seed = abs(hash(sentences[0])) % 100000 if sentences else 1
+    images = {}
+    for k, a, b in bounds:
+        log(f"AI picture {k + 1}/{len(bounds)}: {prompts[k][:70]}")
+        img = ai_tools.ai_image(prompts[k], tmp / f"ai{k:02d}.jpg", seed=seed + k, style=style)
+        if img:
+            images[k] = img
+    if not images:
+        log("No AI pictures could be made, using normal background")
+        return make_background(duration, cfg, tmp, query, cid)
+
+    enc = ["-c:v", "libx264", "-preset", "veryfast", "-crf", "20", "-pix_fmt", "yuv420p", "-r", str(FPS), "-an"]
+    clips, last_ok = [], next(iter(images.values()))
+    for j, (k, a, b) in enumerate(bounds):
+        src = images.get(k, last_ok)
+        last_ok = src
+        frames = max(2, int(round((b - a) * FPS)))
+        zs = min(0.0015, 0.18 / frames)
+        z = f"min(1.0+{zs:.6f}*on,1.2)" if j % 2 == 0 else f"max(1.2-{zs:.6f}*on,1.0)"
+        vf = (f"scale={W*2}:{H*2}:force_original_aspect_ratio=increase,crop={W*2}:{H*2},"
+              f"zoompan=z='{z}':d={frames}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s={W}x{H}:fps={FPS}")
+        clip = tmp / f"aiseg{j:03d}.mp4"
+        run(["ffmpeg", "-y", "-loglevel", "error", "-loop", "1", "-i", str(src), "-vf", vf,
+             "-frames:v", str(frames), *enc, str(clip)])
+        clips.append(clip)
+    (tmp / "ailist.txt").write_text("".join(f"file '{c.name}'\n" for c in clips))
+    run(["ffmpeg", "-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", "ailist.txt",
+         "-c", "copy", "bg.mp4"], cwd=tmp)
+    return tmp / "bg.mp4"
+
+
 # ------------------------------------------------------------------ main ----
 def make_short(script_path: Path, cfg=None, out_dir: Path = None):
     cfg = cfg or load_config()
     out_dir = out_dir or ROOT / "output"
     out_dir.mkdir(exist_ok=True)
     meta, body = parse_script(script_path)
-    sentences = split_sentences(body)
+    sentences, scene_idx, scene_list = split_scenes(body)
     name = script_path.stem
     cfg, cid = resolve_settings(cfg, meta)
     cfg["_first_sentence"] = sentences[0] if sentences else ""
@@ -530,7 +628,13 @@ def make_short(script_path: Path, cfg=None, out_dir: Path = None):
         top = meta.get("top_text", cfg.get("channel_name", "")) or ""
         top = top.replace("{", "(").replace("}", ")")
         write_ass(tmp / "subs.ass", cues, cfg, top)
-        bg = make_background(duration, cfg, tmp, meta.get("background", cfg.get("pexels_query", "")), cid)
+        query = meta.get("background", cfg.get("pexels_query", ""))
+        visuals = str(meta.get("visuals") or cfg.get("visuals", "")).lower()
+        if visuals in ("ai", "ai_images", "ai-images") or scene_list:
+            cfg["about"] = meta.get("about", cfg.get("about", ""))
+            bg = make_ai_background(duration, sentences, scene_idx, scene_list, cfg, tmp, cid, query)
+        else:
+            bg = make_background(duration, cfg, tmp, query, cid)
 
         mdir = channel_dir("music", cid)
         music = sorted(p for p in mdir.iterdir() if p.suffix.lower() in AUD_EXT) if mdir.is_dir() else []
