@@ -50,5 +50,39 @@ category_id: "27"         # 27 = Education, 22 = People & Blogs, 29 = Nonprofits
 default_tags: ["islamic shorts", "bangla waz", "ইসলামিক", "shorts"]
 default_description: "#shorts #islamic #bangla"
 
+# ---------- STYLE ----------
+default_style: normal     # used when a script doesn't say: normal or cinematic
+
+# ---------- CHANNELS / চ্যানেল ----------
+# Each script says which channel it is for (the Shorts Studio page adds "channel: <id>").
+# language: bn, en, hi, ur, ar, es, fr, de, id, tr, ja, zh ... (any language OmniVoice supports).
+# A single script can also use another language with "language: xx" (the Shorts Studio page does this).
+# A channel can change ANY setting above. Each channel gets its OWN saved voice (voice/<id>/),
+# and can have its own photos in backgrounds/<id>/ and music in music/<id>/.
+channels:
+  nafse:
+    name: "নফসে মুতমাইন্নাহ"
+    language: bn
+    voice_style: "male, middle-aged, low pitch"
+    background_colors: ["#0b1d3a", "#1e4f8a"]
+    default_tags: ["islamic shorts", "bangla waz", "ইসলামিক", "shorts"]
+    default_description: "#shorts #islamic #bangla"
+  tinytoon:
+    name: "Tiny Toon Tales"
+    language: en            # English voice + English subtitles
+    voice_style: "female, young adult, high pitch"
+    background_colors: ["#ff9a3c", "#7b5cff"]
+    highlight_color: "#FFE066"
+    default_tags: ["kids stories", "bedtime stories", "cartoon", "shorts"]
+    default_description: "#shorts #kidsstories #bedtimestories"
+  vistara:
+    name: "Vistara Mind"
+    language: en
+    voice_style: "male, young adult, moderate pitch"
+    background_colors: ["#120d2b", "#3a2a7a"]
+    highlight_color: "#B9A6FF"
+    default_tags: ["motivation", "mindset", "shorts"]
+    default_description: "#shorts #motivation"
+
 # ---------- QUEUE ----------
 max_per_run: 5            # how many scripts to make in one go (the rest wait for the next run)
