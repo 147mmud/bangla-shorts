@@ -12,8 +12,13 @@ from pathlib import Path
 
 import requests
 
-GH_MODELS_URL = "https://models.github.ai/inference/chat/completions"
-DEFAULT_MODELS = ["openai/gpt-4.1-mini", "openai/gpt-4o-mini", "openai/gpt-4o"]
+# (endpoint, model) pairs tried in order
+ENDPOINTS = [
+    ("https://models.github.ai/inference/chat/completions", "openai/gpt-4.1-mini"),
+    ("https://models.github.ai/inference/chat/completions", "openai/gpt-4o-mini"),
+    ("https://models.inference.ai.azure.com/chat/completions", "gpt-4o-mini"),
+    ("https://models.github.ai/inference/chat/completions", "openai/gpt-4o"),
+]
 
 
 def log(*a):
@@ -21,39 +26,49 @@ def log(*a):
 
 
 def llm(messages, want_json=False, model=None, temperature=0.8, max_tokens=2500):
-    """Chat completion through GitHub Models. Tries a few models in turn."""
+    """Chat completion through GitHub Models (free). Tries a few endpoints/models in turn."""
     token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
     if not token:
         raise RuntimeError("No GITHUB_TOKEN for GitHub Models")
-    models = [model] if model else DEFAULT_MODELS
+    tries = [(ENDPOINTS[0][0], model)] if model else ENDPOINTS
     last = None
-    for m in models:
+    for url, m in tries:
         body = {"model": m, "messages": messages, "temperature": temperature, "max_tokens": max_tokens}
         if want_json:
             body["response_format"] = {"type": "json_object"}
         for attempt in range(3):
             try:
-                r = requests.post(GH_MODELS_URL, json=body, timeout=180, headers={
+                r = requests.post(url, json=body, timeout=180, allow_redirects=False, headers={
                     "Authorization": f"Bearer {token}", "Content-Type": "application/json",
-                    "Accept": "application/vnd.github+json"})
-                if r.status_code == 429:
-                    wait = int(r.headers.get("retry-after", "20") or 20)
-                    log(f"{m}: rate limited, waiting {wait}s")
-                    time.sleep(min(wait, 90))
-                    continue
-                if r.status_code >= 400:
-                    last = f"{m}: HTTP {r.status_code} {r.text[:300]}"
-                    log(last)
-                    break
-                text = r.json()["choices"][0]["message"]["content"]
-                if want_json:
-                    mm = re.search(r"\{[\s\S]*\}", text)
-                    return json.loads(mm.group(0) if mm else text)
-                return text
-            except (requests.RequestException, ValueError, KeyError) as e:
+                    "Accept": "application/json", "X-GitHub-Api-Version": "2022-11-28"})
+            except requests.RequestException as e:
                 last = f"{m}: {e}"
                 log(last)
                 time.sleep(5)
+                continue
+            ctype = r.headers.get("content-type", "")
+            if r.status_code == 429:
+                wait = int(r.headers.get("retry-after", "20") or 20)
+                log(f"{m}: rate limited, waiting {wait}s")
+                time.sleep(min(wait, 90))
+                continue
+            if r.status_code >= 300 or "json" not in ctype:
+                last = f"{m} @ {url.split('/')[2]}: HTTP {r.status_code} [{ctype}] {r.text[:300]!r}"
+                log(last)
+                if want_json and "response_format" in body and r.status_code in (400, 422):
+                    body.pop("response_format")  # some models reject JSON mode; ask in the prompt instead
+                    continue
+                break
+            try:
+                text = r.json()["choices"][0]["message"]["content"] or ""
+                if not want_json:
+                    return text
+                mm = re.search(r"\{[\s\S]*\}", text)
+                return json.loads(mm.group(0) if mm else text)
+            except (ValueError, KeyError, IndexError) as e:
+                last = f"{m}: bad reply ({e}): {r.text[:300]!r}"
+                log(last)
+                time.sleep(3)
     raise RuntimeError(f"GitHub Models failed: {last}")
 
 

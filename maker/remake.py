@@ -91,10 +91,22 @@ def vtt_text(path):
     return " ".join(lines)
 
 
+def _find_video(tmp):
+    """The downloaded file (any extension) that ffprobe can read as video."""
+    for p in sorted(tmp.glob("src*")):
+        if p.suffix.lower() in (".vtt", ".part", ".json", ".ytdl") or not p.is_file():
+            continue
+        r = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=codec_type",
+                            "-of", "csv=p=0", str(p)], capture_output=True, text=True)
+        if "video" in r.stdout:
+            return p
+    return None
+
+
 def from_url(url, tmp):
     import yt_dlp
     info, text, video = {}, "", None
-    base = {"quiet": True, "no_warnings": True, "noplaylist": True, "outtmpl": str(tmp / "src.%(ext)s"),
+    base = {"quiet": True, "no_warnings": True, "noprogress": True, "noplaylist": True, "outtmpl": str(tmp / "src.%(ext)s"),
             "socket_timeout": 30, "retries": 2}
     try:
         base["js_runtimes"] = {"node": {}}
@@ -108,8 +120,7 @@ def from_url(url, tmp):
                                "subtitleslangs": ["bn", "en", "hi", "ur", "ar", ".*-orig"],
                                "subtitlesformat": "vtt", "ignoreerrors": False}) as y:
             info = y.extract_info(url, download=True) or {}
-        vids = [p for p in tmp.glob("src.*") if p.suffix.lower() in (".mp4", ".webm", ".mkv", ".mov")]
-        video = vids[0] if vids else None
+        video = _find_video(tmp)
     except Exception as e:  # noqa: BLE001
         log("Video download blocked/failed:", str(e)[:200])
     # 2) subtitles only (works more often than video)
