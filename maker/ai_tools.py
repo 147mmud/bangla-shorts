@@ -12,6 +12,10 @@ from pathlib import Path
 
 import requests
 
+
+def log(*a):
+    print("[ai]", *a, flush=True)
+
 GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
 # Free-tier Flash models; names change over time, so a few are tried in order (override with GEMINI_MODEL).
 GEMINI_MODELS = ["gemini-flash-latest", "gemini-3.6-flash", "gemini-3.5-flash", "gemini-3-flash-preview",

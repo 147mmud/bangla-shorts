@@ -205,7 +205,40 @@ def split_sentences(text):
     return merged
 
 
+TS_RE = re.compile(r"[\[(（]\s*\d{1,2}:\d{2}(?:\s*(?:[-–—~]|to|থেকে)\s*\d{1,2}:\d{2})?\s*(?:s|sec|সেকেন্ড)?\s*[\])）]|"
+                   r"^\s*\d{1,2}:\d{2}\s*[-–—]\s*\d{1,2}:\d{2}\s*[:|]?", re.M)
+LABELS = (r"(?:হুক|hook|intro|introduction|ইন্ট্রো|ভূমিকা|শুরু|মূল\s*অংশ|মূল\s*বার্তা|body|main(?:\s*part)?|"
+          r"cta|call\s*to\s*action|outro|ending|শেষ(?:\s*অংশ)?|উপসংহার|conclusion|সমাপ্তি|"
+          r"(?:scene|দৃশ্য|part|অংশ|section)\s*[\d০-৯]+|narrator|ন্যারেটর|voice\s*over|ভয়েস\s*ওভার|ভয়েসওভার)")
+LABEL_LINE = re.compile(r"^\s*(?:[-•*#>]+\s*)?\**" + LABELS + r"\**\s*[:：\-–—]?\s*$", re.I)
+LABEL_PREFIX = re.compile(r"^\s*(?:[-•*#>]+\s*)?\**" + LABELS + r"\**\s*[:：–—-]\s*", re.I)
+STAGE_RE = re.compile(r"\[(?!\s*(?:img|image|scene|ছবি|দৃশ্য)\s*:)[^\]\n]{0,80}\]", re.I)
+
+
+def clean_script(body):
+    """Remove things that must not be read aloud: timestamps, section labels,
+    [stage notes], markdown symbols. Keeps [img: ...] picture markers."""
+    out = []
+    for line in body.split("\n"):
+        if SCENE_RE_TEST.match(line):
+            out.append(line)
+            continue
+        line = TS_RE.sub(" ", line)
+        line = STAGE_RE.sub(" ", line)
+        if LABEL_LINE.match(line):
+            continue
+        line = LABEL_PREFIX.sub("", line)
+        line = re.sub(r"\*\*|__|^\s*[-•*#>]+\s+", "", line)
+        line = re.sub(r"\s{2,}", " ", line).strip()
+        if line:
+            out.append(line)
+    return "\n".join(out)
+
+
 SCENE_RE = re.compile(r"^\s*\[(?:img|image|scene|ছবি|দৃশ্য)\s*:\s*(.+?)\]\s*$", re.I)
+
+
+SCENE_RE_TEST = re.compile(r"^\s*\[(?:img|image|scene|ছবি|দৃশ্য)\s*:", re.I)
 
 
 def split_scenes(body):
@@ -599,6 +632,9 @@ def make_short(script_path: Path, cfg=None, out_dir: Path = None):
     out_dir = out_dir or ROOT / "output"
     out_dir.mkdir(exist_ok=True)
     meta, body = parse_script(script_path)
+    body = clean_script(body)
+    if not body.strip():
+        raise ValueError("The script is empty after removing labels/timestamps.")
     sentences, scene_idx, scene_list = split_scenes(body)
     name = script_path.stem
     cfg, cid = resolve_settings(cfg, meta)
