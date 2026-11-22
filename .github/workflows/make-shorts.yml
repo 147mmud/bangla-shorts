@@ -1,0 +1,89 @@
+name: Make Bangla Shorts
+
+on:
+  # 1) Runs automatically when you add a script to the "scripts" folder
+  push:
+    paths: ["scripts/*.txt"]
+  # 2) "Run workflow" button on the Actions tab
+  workflow_dispatch:
+  # 3) Every day at 9:00 AM Bangladesh time, to finish any scripts still waiting
+  schedule:
+    - cron: "0 3 * * *"
+
+permissions:
+  contents: write   # save progress + create download links (Releases)
+  actions: write    # start the next run when many scripts are waiting
+
+# Only one run at a time -> scripts are made strictly one by one
+concurrency:
+  group: shorts-queue
+  cancel-in-progress: false
+
+jobs:
+  make:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 330
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Any scripts waiting?
+        id: check
+        run: |
+          if ls scripts/*.txt >/dev/null 2>&1; then echo "go=yes" >> "$GITHUB_OUTPUT"; ls scripts/*.txt;
+          else echo "go=no" >> "$GITHUB_OUTPUT"; echo "No scripts waiting - nothing to do."; fi
+
+      - name: Install video tools and Bangla font
+        if: steps.check.outputs.go == 'yes'
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q ffmpeg fonts-noto-core
+          mkdir -p fonts
+
+      - uses: actions/setup-python@v5
+        if: steps.check.outputs.go == 'yes'
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Reuse downloaded OmniVoice model
+        if: steps.check.outputs.go == 'yes'
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: omnivoice-model-v1
+
+      - name: Install Python packages
+        if: steps.check.outputs.go == 'yes'
+        run: |
+          pip install torch torchaudio --index-url https://download.pytorch.org/whl/cpu
+          pip install -r requirements.txt
+
+      - name: Make shorts one by one
+        if: steps.check.outputs.go == 'yes'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+        run: |
+          git config user.name "shorts-bot"
+          git config user.email "shorts-bot@users.noreply.github.com"
+          python maker/run_queue.py
+
+      - name: Keep the videos as a backup download (7 days)
+        if: always() && steps.check.outputs.go == 'yes'
+        uses: actions/upload-artifact@v4
+        with:
+          name: shorts-${{ github.run_number }}
+          path: output/*.mp4
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: More scripts waiting? Start the next run
+        if: success() && steps.check.outputs.go == 'yes'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git pull -q --rebase || true
+          if ls scripts/*.txt >/dev/null 2>&1; then gh workflow run make-shorts.yml --ref "${GITHUB_REF_NAME}"; fi
