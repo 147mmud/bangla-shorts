@@ -3,7 +3,7 @@ name: Make Bangla Shorts
 on:
   # 1) Runs automatically when you add a script to the "scripts" folder
   push:
-    paths: ["scripts/*.txt"]
+    paths: ["scripts/*.txt", "remake/*.txt"]
   # 2) "Run workflow" button on the Actions tab
   workflow_dispatch:
   # 3) Every day at 9:00 AM Bangladesh time, to finish any scripts still waiting
@@ -13,6 +13,7 @@ on:
 permissions:
   contents: write   # save progress + create download links (Releases)
   actions: write    # start the next run when many scripts are waiting
+  models: read      # free GitHub AI for remakes and picture ideas
 
 # Only one run at a time -> scripts are made strictly one by one
 concurrency:
@@ -29,7 +30,7 @@ jobs:
       - name: Any scripts waiting?
         id: check
         run: |
-          if ls scripts/*.txt >/dev/null 2>&1; then echo "go=yes" >> "$GITHUB_OUTPUT"; ls scripts/*.txt;
+          if ls scripts/*.txt remake/*.txt >/dev/null 2>&1 || ls scripts/*.txt >/dev/null 2>&1 || ls remake/*.txt >/dev/null 2>&1; then echo "go=yes" >> "$GITHUB_OUTPUT"; ls scripts/*.txt remake/*.txt 2>/dev/null;
           else echo "go=no" >> "$GITHUB_OUTPUT"; echo "No scripts waiting - nothing to do."; fi
 
       - name: Install video tools and Bangla font
@@ -57,12 +58,15 @@ jobs:
         run: |
           pip install torch torchaudio --index-url https://download.pytorch.org/whl/cpu
           pip install -r requirements.txt
+          pip install -U "yt-dlp[default]"
 
       - name: Make shorts one by one
         if: steps.check.outputs.go == 'yes'
         env:
           GH_TOKEN: ${{ github.token }}
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+          POLLINATIONS_KEY: ${{ secrets.POLLINATIONS_KEY }}
+          GITHUB_TOKEN: ${{ github.token }}
           YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
           YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
           YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
@@ -86,4 +90,4 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           git pull -q --rebase || true
-          if ls scripts/*.txt >/dev/null 2>&1; then gh workflow run make-shorts.yml --ref "${GITHUB_REF_NAME}"; fi
+          if ls scripts/*.txt >/dev/null 2>&1 || ls remake/*.txt >/dev/null 2>&1; then gh workflow run make-shorts.yml --ref "${GITHUB_REF_NAME}"; fi
