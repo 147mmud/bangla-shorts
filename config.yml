@@ -16,7 +16,7 @@ voice_engine: omnivoice
 voice_style: "male, middle-aged, low pitch"
 
 voice_speed: 1.0        # 0.9 = slower, 1.1 = faster
-quality_steps: 32       # 32 = best quality, 16 = twice as fast
+quality_steps: 16       # 16 = fast (good), 32 = best quality but twice as slow
 pause_seconds: 0.35     # silence between sentences
 
 # Backup Microsoft voices: bn-BD-PradeepNeural (male), bn-BD-NabanitaNeural (female),
