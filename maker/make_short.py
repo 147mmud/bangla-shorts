@@ -548,7 +548,7 @@ def make_background(duration, cfg, tmp, query, cid=""):
             zin = i % 2 == 0  # alternate zoom in / zoom out
             zs = float(cfg.get("zoom_speed", 0.0011))
             z = f"min(1.0+{zs}*on,1.2)" if zin else f"max(1.2-{zs}*on,1.0)"
-            vf = (f"scale={W*2}:{H*2}:force_original_aspect_ratio=increase,crop={W*2}:{H*2},"
+            vf = (f"scale={W*4//3}:{H*4//3}:force_original_aspect_ratio=increase,crop={W*4//3}:{H*4//3},"
                   f"zoompan=z='{z}':d={frames}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s={W}x{H}:fps={FPS}")
             run(["ffmpeg", "-y", "-loglevel", "error", "-loop", "1", "-i", str(src), "-vf", vf,
                  "-frames:v", str(frames), *enc, str(clip)])
@@ -614,7 +614,7 @@ def make_ai_background(duration, sentences, scene_idx, prompts, cfg, tmp, cid, q
         frames = max(2, int(round((b - a) * FPS)))
         zs = min(0.0015, 0.18 / frames)
         z = f"min(1.0+{zs:.6f}*on,1.2)" if j % 2 == 0 else f"max(1.2-{zs:.6f}*on,1.0)"
-        vf = (f"scale={W*2}:{H*2}:force_original_aspect_ratio=increase,crop={W*2}:{H*2},"
+        vf = (f"scale={W*4//3}:{H*4//3}:force_original_aspect_ratio=increase,crop={W*4//3}:{H*4//3},"
               f"zoompan=z='{z}':d={frames}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s={W}x{H}:fps={FPS}")
         clip = tmp / f"aiseg{j:03d}.mp4"
         run(["ffmpeg", "-y", "-loglevel", "error", "-loop", "1", "-i", str(src), "-vf", vf,
@@ -681,7 +681,7 @@ def make_short(script_path: Path, cfg=None, out_dir: Path = None):
         look = ""
         if cfg.get("film_look"):
             look = ("eq=contrast=1.08:saturation=0.82,colorbalance=rs=0.06:gs=0.01:bs=-0.06:rm=0.03:bm=-0.03,"
-                    "vignette=angle=PI/4.2,noise=alls=7:allf=t,")
+                    "vignette=angle=PI/4.2,noise=alls=3:allf=t,")
         bars = int(cfg.get("letterbox", 0) or 0)
         if bars:
             look += (f"drawbox=x=0:y=0:w=iw:h={bars}:color=black:t=fill,"
@@ -698,7 +698,8 @@ def make_short(script_path: Path, cfg=None, out_dir: Path = None):
             af = "[1:a]anull[a]"
         final = out_dir / f"{name}.mp4"
         cmd += ["-filter_complex", f"{vf};{af}", "-map", "[v]", "-map", "[a]", "-t", f"{duration:.2f}",
-                "-c:v", "libx264", "-preset", "medium", "-crf", "20", "-pix_fmt", "yuv420p", "-r", str(FPS),
+                "-c:v", "libx264", "-preset", "veryfast", "-crf", "23", "-maxrate", "6M", "-bufsize", "12M",
+                "-pix_fmt", "yuv420p", "-r", str(FPS),
                 "-c:a", "aac", "-b:a", "192k", "-ar", "48000", "-movflags", "+faststart", str(final.resolve())]
         log("Rendering final video...")
         run(cmd, cwd=tmp)
