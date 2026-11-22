@@ -1,0 +1,9 @@
+channel: vistara
+channel_name: Vistara Mind
+language: en
+style: cinematic
+colors: #120d2b, #3a2a7a
+highlight: #b9a6ff
+about: Motivation, mindset, self-improvement and life lessons
+---
+1. https://github.com/147mmud/bangla-shorts/releases/download/short-001-sabr-20261122-094637/001-sabr.mp4
