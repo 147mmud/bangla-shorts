@@ -269,7 +269,7 @@ def process_job(job: Path):
             sources.append(("url", line.split()[0]))
     if not sources:
         raise ValueError("No links or files found in the remake job.")
-    keep = ["channel", "channel_name", "language", "style", "colors", "highlight", "about"]
+    keep = ["channel", "channel_name", "language", "style", "colors", "highlight", "about", "pick_images"]
     results = []
     for n, (kind, ref) in enumerate(sources, 1):
         name = f"{job.stem}-{n}"

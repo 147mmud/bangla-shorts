@@ -179,6 +179,35 @@ def ai_image(prompt, out: Path, seed=1, width=1080, height=1920, style=""):
     return None
 
 
+ALLOWED_IMG_HOSTS = ("image.pollinations.ai", "gen.pollinations.ai")
+
+
+def fetch_exact(url, out: Path):
+    """Download exactly the picture you chose on the Shorts Studio page (same link = same picture)."""
+    host = urllib.parse.urlparse(url).netloc
+    if host not in ALLOWED_IMG_HOSTS:
+        log("Skipping picture from unknown site:", host)
+        return None
+    for attempt in range(5):
+        wait = _last_img[0] + 16 - time.time()
+        if wait > 0:
+            time.sleep(wait)
+        try:
+            r = requests.get(url, timeout=240)
+            _last_img[0] = time.time()
+            if r.status_code == 200 and r.headers.get("content-type", "").startswith("image"):
+                out.write_bytes(r.content)
+                from PIL import Image
+                Image.open(out).verify()
+                return out
+            log(f"chosen picture attempt {attempt + 1}: HTTP {r.status_code}")
+        except Exception as e:  # noqa: BLE001
+            _last_img[0] = time.time()
+            log(f"chosen picture attempt {attempt + 1}: {e}")
+        time.sleep(10 * (attempt + 1))
+    return None
+
+
 def scene_prompts(sentences, cfg, n_scenes):
     """Ask the AI for one English image prompt per group of sentences."""
     groups = _group(sentences, n_scenes)

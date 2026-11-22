@@ -567,6 +567,11 @@ def make_ai_background(duration, sentences, scene_idx, prompts, cfg, tmp, cid, q
     import ai_tools
     spans = getattr(build_voice, "spans", [])
     style = ""
+    picks = cfg.get("_picks") or []
+    if picks:  # pictures chosen on the page: spread them evenly over the sentences
+        prompts = [p.get("u", "") for p in picks]
+        n = len(prompts)
+        scene_idx = [min(n - 1, int(i * n / max(1, len(sentences)))) for i in range(len(sentences))]
     if not prompts:
         n = max(3, min(8, round(duration / 6)))
         try:
@@ -598,8 +603,11 @@ def make_ai_background(duration, sentences, scene_idx, prompts, cfg, tmp, cid, q
     seed = abs(hash(sentences[0])) % 100000 if sentences else 1
     images = {}
     for k, a, b in bounds:
-        log(f"AI picture {k + 1}/{len(bounds)}: {prompts[k][:70]}")
-        img = ai_tools.ai_image(prompts[k], tmp / f"ai{k:02d}.jpg", seed=seed + k, style=style)
+        log(f"{'Chosen' if picks else 'AI'} picture {k + 1}/{len(bounds)}: {prompts[k][:90]}")
+        if picks:
+            img = ai_tools.fetch_exact(prompts[k], tmp / f"ai{k:02d}.jpg")
+        else:
+            img = ai_tools.ai_image(prompts[k], tmp / f"ai{k:02d}.jpg", seed=seed + k, style=style)
         if img:
             images[k] = img
     if not images:
@@ -666,7 +674,16 @@ def make_short(script_path: Path, cfg=None, out_dir: Path = None):
         write_ass(tmp / "subs.ass", cues, cfg, top)
         query = meta.get("background", cfg.get("pexels_query", ""))
         visuals = str(meta.get("visuals") or cfg.get("visuals", "")).lower()
-        if visuals in ("ai", "ai_images", "ai-images") or scene_list:
+        picks = []
+        if meta.get("pick_images"):
+            try:
+                picks = [p for p in json.loads(meta["pick_images"]) if isinstance(p, dict) and p.get("u")][:20]
+            except ValueError:
+                log("pick_images could not be read, letting AI choose")
+        if picks:
+            cfg["_picks"] = picks
+            log(f"{len(picks)} picture(s) chosen on the page")
+        if visuals in ("ai", "ai_images", "ai-images", "picked") or scene_list or picks:
             cfg["about"] = meta.get("about", cfg.get("about", ""))
             bg = make_ai_background(duration, sentences, scene_idx, scene_list, cfg, tmp, cid, query)
         else:
