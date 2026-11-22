@@ -30,7 +30,77 @@ VOICE_DIR = ROOT / "voice"
 IMG_EXT = {".jpg", ".jpeg", ".png", ".webp"}
 VID_EXT = {".mp4", ".mov", ".webm", ".mkv"}
 AUD_EXT = {".mp3", ".wav", ".m4a", ".ogg"}
-VOICE_SAMPLE = "আসসালামু আলাইকুম। আজ আমরা এমন একটি কথা শুনব, যা আমাদের হৃদয়কে শান্ত করবে।"
+# Look presets. A script picks one with "style: cinematic" (default: normal).
+# Any value can be overridden in config.yml under a "cinematic:" block.
+STYLE_PRESETS = {
+    "normal": {},
+    "cinematic": {
+        "font": "Noto Serif Bengali",
+        "font_size": 76,
+        "text_color": "#F3E9D2",
+        "highlight_color": "#E8C27A",
+        "subtitle_position": 70,
+        "subtitle_anim": "fade",
+        "darken": 0.28,
+        "image_seconds": 6,
+        "zoom_speed": 0.0006,
+        "voice_speed": 0.95,
+        "pause_seconds": 0.55,
+        "background_colors": ["#1c1408", "#6b4a1e"],
+        "letterbox": 150,
+        "film_look": True,
+    },
+}
+STYLE_ALIASES = {"সিনেম্যাটিক": "cinematic", "cinema": "cinematic", "সাধারণ": "normal", "নর্মাল": "normal"}
+
+VOICE_SAMPLES = {
+    "bn": "আসসালামু আলাইকুম। আজ আমরা এমন একটি কথা শুনব, যা আমাদের হৃদয়কে শান্ত করবে।",
+    "en": "Hello friends! Today I have a wonderful little story to share with you.",
+}
+# Defaults per language (a channel or config.yml can override any of them)
+LANG_DEFAULTS = {
+    "bn": {"font": "Noto Sans Bengali", "edge_voice": "bn-BD-PradeepNeural"},
+    "en": {"font": "Noto Sans", "edge_voice": "en-US-JennyNeural", "subtitle_max_chars": 32},
+}
+
+
+def resolve_settings(cfg, meta):
+    """config.yml -> channel block -> style preset. Returns (settings, channel_id)."""
+    channels = cfg.get("channels") or {}
+    cid = re.sub(r"[^a-z0-9_-]", "", str(meta.get("channel", "")).strip().lower())
+    ch = channels.get(cid) or {}
+    lang = str(meta.get("language") or ch.get("language") or cfg.get("language") or "bn").lower()[:2]
+    lang = lang if lang in LANG_DEFAULTS else "bn"
+    base = {k: v for k, v in cfg.items() if k not in ("channels", "cinematic", "normal")}
+    out = {**LANG_DEFAULTS[lang], **base, **{k: v for k, v in ch.items() if k != "name"}}
+    if lang != "bn" and "Bengali" in str(out.get("font", "")) and "font" not in ch:
+        out["font"] = LANG_DEFAULTS[lang]["font"]
+    if lang != "bn" and str(out.get("edge_voice", "")).startswith("bn-") and "edge_voice" not in ch:
+        out["edge_voice"] = LANG_DEFAULTS[lang]["edge_voice"]
+    out["language"] = lang
+    out["channel_name"] = meta.get("channel_name") or ch.get("name") or cfg.get("channel_name", "")
+    out["_channel"] = cid
+    out["_voice_dir"] = str(VOICE_DIR / cid) if cid else str(VOICE_DIR)
+
+    style = str(meta.get("style") or out.get("default_style", "normal")).strip().lower()
+    style = STYLE_ALIASES.get(style, style)
+    if style not in STYLE_PRESETS:
+        log(f"Unknown style '{style}', using normal")
+        style = "normal"
+    preset = dict(STYLE_PRESETS[style])
+    if lang != "bn" and "font" in preset:
+        preset["font"] = preset["font"].replace(" Bengali", "")
+    out = {**out, **preset, **(cfg.get(style) or {}), **(ch.get(style) or {})}
+    out["_style"] = style
+    return out, cid
+
+
+def channel_dir(folder, cid):
+    """backgrounds/<channel>/ if it exists and has files, else backgrounds/."""
+    d = ROOT / folder / cid if cid else None
+    if d and d.is_dir() and any(p.is_file() and not p.name.startswith((".", "README")) for p in d.iterdir()):
+        return d
+    return ROOT / folder
 
 
 def log(*a):
@@ -133,9 +203,12 @@ class OmniVoiceTTS:
 
     def _voice_prompt(self, cfg):
         """Same voice in every video: your own recording, or a saved 'channel voice'."""
-        own = next((p for p in VOICE_DIR.glob("my_voice.*") if p.suffix.lower() in AUD_EXT), None)
+        vdir = Path(cfg.get("_voice_dir", VOICE_DIR))
+        self.lang = cfg.get("language", "bn")
+        sample_text = VOICE_SAMPLES.get(self.lang, VOICE_SAMPLES["bn"])
+        own = next((p for p in vdir.glob("my_voice.*") if p.suffix.lower() in AUD_EXT), None) if vdir.is_dir() else None
         if own:
-            txt = VOICE_DIR / "my_voice.txt"
+            txt = vdir / "my_voice.txt"
             ref_text = txt.read_text(encoding="utf-8").strip() if txt.exists() else None
             if ref_text is None:
                 log("voice/my_voice.txt not found - transcribing your voice sample automatically")
@@ -143,31 +216,31 @@ class OmniVoiceTTS:
             log("Cloning your voice from", own.name)
             return self.model.create_voice_clone_prompt(ref_audio=str(own), ref_text=ref_text)
 
-        saved, saved_txt = VOICE_DIR / "channel_voice.wav", VOICE_DIR / "channel_voice.txt"
+        saved, saved_txt = vdir / "channel_voice.wav", vdir / "channel_voice.txt"
         style = str(cfg.get("voice_style", "male, middle-aged, low pitch")).strip()
-        style_file = VOICE_DIR / "channel_voice_style.txt"
+        style_file = vdir / "channel_voice_style.txt"
         if saved.exists() and saved_txt.exists() and (
             not style_file.exists() or style_file.read_text(encoding="utf-8").strip() == style
         ):
-            log("Using saved channel voice (voice/channel_voice.wav)")
+            log(f"Using saved channel voice ({saved.relative_to(ROOT)})")
             return self.model.create_voice_clone_prompt(
                 ref_audio=str(saved), ref_text=saved_txt.read_text(encoding="utf-8").strip()
             )
 
         log(f"Designing a new channel voice: '{style}'")
         audio = self.model.generate(
-            text=VOICE_SAMPLE, language="bn", instruct=style or None, num_step=self.steps
+            text=sample_text, language=self.lang, instruct=style or None, num_step=self.steps
         )[0]
-        VOICE_DIR.mkdir(exist_ok=True)
+        vdir.mkdir(parents=True, exist_ok=True)
         sf.write(saved, audio, SR)
-        saved_txt.write_text(VOICE_SAMPLE, encoding="utf-8")
+        saved_txt.write_text(sample_text, encoding="utf-8")
         style_file.write_text(style, encoding="utf-8")
         self.new_voice_files = [saved, saved_txt, style_file]
-        return self.model.create_voice_clone_prompt(ref_audio=str(saved), ref_text=VOICE_SAMPLE)
+        return self.model.create_voice_clone_prompt(ref_audio=str(saved), ref_text=sample_text)
 
     def say(self, text):
         audio = self.model.generate(
-            text=text, language="bn", voice_clone_prompt=self.prompt,
+            text=text, language=self.lang, voice_clone_prompt=self.prompt,
             num_step=self.steps, speed=self.speed,
         )[0]
         return np.asarray(audio, dtype=np.float32)
@@ -275,7 +348,10 @@ def write_ass(path, cues, cfg, title_text):
     end_all = cues[-1][1] + 0.6 if cues else 5
     if title_text:
         lines.append(f"Dialogue: 0,{ass_time(0)},{ass_time(end_all)},Top,,0,0,0,,{title_text}")
-    pop = r"{\fad(80,60)\fscx88\fscy88\t(0,140,\fscx100\fscy100)}"
+    if cfg.get("subtitle_anim") == "fade":
+        pop = r"{\fad(250,200)}"
+    else:
+        pop = r"{\fad(80,60)\fscx88\fscy88\t(0,140,\fscx100\fscy100)}"
     for a, b, text in cues:
         text = text.replace("{", "(").replace("}", ")")
         lines.append(f"Dialogue: 1,{ass_time(a)},{ass_time(b)},Sub,,0,0,0,,{pop}{text}")
@@ -317,10 +393,10 @@ def pexels_clips(query, n, tmp):
         return []
 
 
-def make_background(duration, cfg, tmp, query):
+def make_background(duration, cfg, tmp, query, cid=""):
     seg = float(cfg.get("image_seconds", 5))
     n = max(1, math.ceil(duration / seg))
-    bg_dir = ROOT / "backgrounds"
+    bg_dir = channel_dir("backgrounds", cid)
     files = sorted(p for p in bg_dir.iterdir() if p.suffix.lower() in IMG_EXT | VID_EXT) if bg_dir.is_dir() else []
     files += pexels_clips(query, min(n, 8), tmp)
     out = tmp / "bg.mp4"
@@ -340,7 +416,8 @@ def make_background(duration, cfg, tmp, query):
         cover = f"scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H}"
         if src.suffix.lower() in IMG_EXT:
             zin = i % 2 == 0  # alternate zoom in / zoom out
-            z = "min(1.0+0.0011*on,1.2)" if zin else "max(1.2-0.0011*on,1.0)"
+            zs = float(cfg.get("zoom_speed", 0.0011))
+            z = f"min(1.0+{zs}*on,1.2)" if zin else f"max(1.2-{zs}*on,1.0)"
             vf = (f"scale={W*2}:{H*2}:force_original_aspect_ratio=increase,crop={W*2}:{H*2},"
                   f"zoompan=z='{z}':d={frames}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s={W}x{H}:fps={FPS}")
             run(["ffmpeg", "-y", "-loglevel", "error", "-loop", "1", "-i", str(src), "-vf", vf,
@@ -363,7 +440,10 @@ def make_short(script_path: Path, cfg=None, out_dir: Path = None):
     meta, body = parse_script(script_path)
     sentences = split_sentences(body)
     name = script_path.stem
-    log(f"=== {name}: {len(sentences)} sentences ===")
+    cfg, cid = resolve_settings(cfg, meta)
+    style = cfg["_style"]
+    log(f"=== {name}: {len(sentences)} sentences | channel: {cid or 'default'} "
+        f"({cfg['channel_name']}) | language: {cfg['language']} | style: {style} ===")
 
     tmp = Path(tempfile.mkdtemp(prefix="short_"))
     try:
@@ -384,16 +464,28 @@ def make_short(script_path: Path, cfg=None, out_dir: Path = None):
             log("WARNING: longer than 3 minutes - YouTube will not treat this as a Short")
 
         top = meta.get("top_text", cfg.get("channel_name", "")) or ""
+        top = top.replace("{", "(").replace("}", ")")
         write_ass(tmp / "subs.ass", cues, cfg, top)
-        bg = make_background(duration, cfg, tmp, meta.get("background", cfg.get("pexels_query", "")))
+        bg = make_background(duration, cfg, tmp, meta.get("background", cfg.get("pexels_query", "")), cid)
 
-        mdir = ROOT / "music"
+        mdir = channel_dir("music", cid)
         music = sorted(p for p in mdir.iterdir() if p.suffix.lower() in AUD_EXT) if mdir.is_dir() else []
         vol = float(cfg.get("background_music_volume", 0.1))
         cmd = ["ffmpeg", "-y", "-loglevel", "error", "-i", bg.name, "-i", "voice.wav"]
         dark = float(cfg.get("darken", 0.35))
         k = max(0.0, min(1.0, 1 - dark))
-        vf = f"[0:v]format=rgb24,colorchannelmixer=rr={k}:gg={k}:bb={k},ass=subs.ass:fontsdir={ROOT/'fonts'},format=yuv420p[v]"
+        look = ""
+        if cfg.get("film_look"):
+            look = ("eq=contrast=1.08:saturation=0.82,colorbalance=rs=0.06:gs=0.01:bs=-0.06:rm=0.03:bm=-0.03,"
+                    "vignette=angle=PI/4.2,noise=alls=7:allf=t,")
+        bars = int(cfg.get("letterbox", 0) or 0)
+        if bars:
+            look += (f"drawbox=x=0:y=0:w=iw:h={bars}:color=black:t=fill,"
+                     f"drawbox=x=0:y=ih-{bars}:w=iw:h={bars}:color=black:t=fill,")
+        fade = (f",fade=t=in:st=0:d=0.8,fade=t=out:st={max(0, duration-1.0):.2f}:d=1.0"
+                if cfg.get("film_look") else "")
+        vf = (f"[0:v]format=rgb24,colorchannelmixer=rr={k}:gg={k}:bb={k},{look}"
+              f"ass=subs.ass:fontsdir={ROOT/'fonts'}{fade},format=yuv420p[v]")
         if music and vol > 0:
             cmd += ["-stream_loop", "-1", "-i", str(random.choice(music))]
             af = (f"[2:a]volume={vol},afade=t=out:st={max(0, duration-1.5):.2f}:d=1.5[m];"
@@ -416,6 +508,8 @@ def make_short(script_path: Path, cfg=None, out_dir: Path = None):
             "tags": tags or list(cfg.get("default_tags", [])),
             "seconds": round(duration, 1),
             "script": script_path.name,
+            "style": style,
+            "channel": cid,
         }
         (out_dir / f"{name}.json").write_text(json.dumps(info, ensure_ascii=False, indent=2), encoding="utf-8")
         log(f"DONE -> {final}  ({duration:.1f}s)")
