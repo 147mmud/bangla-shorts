@@ -36,7 +36,7 @@ jobs:
         if: steps.check.outputs.go == 'yes'
         run: |
           sudo apt-get update -q
-          sudo apt-get install -y -q ffmpeg fonts-noto-core
+          sudo apt-get install -y -q ffmpeg fonts-noto-core fonts-noto-cjk
           mkdir -p fonts
 
       - uses: actions/setup-python@v5
