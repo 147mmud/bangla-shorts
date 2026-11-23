@@ -19,3 +19,4 @@
 | 2026-11-23 22:03 | rm-nafse-20261124-024038-1.txt | [download](https://github.com/147mmud/bangla-shorts/releases/download/short-rm-nafse-20261124-024038-1-20261123-221216/Allahar-Rohmot-Theke-Kokhono-Nirash-Hoben-Na.mp4) | - |
 | 2026-11-23 22:12 | rm-nafse-20261124-024228-1.txt | [download](https://github.com/147mmud/bangla-shorts/releases/download/short-rm-nafse-20261124-024228-1-20261123-222121/Chehara-Nurani-O-Sundor-Korar-Sohoj-Amol.mp4) | - |
 | 2026-11-23 22:24 | rm-nafse-20261124-025011-1.txt | [download](https://github.com/147mmud/bangla-shorts/releases/download/short-rm-nafse-20261124-025011-1-20261123-223459/Sokale-Ghum-Theke-Uthe-Ei-Chotto-Amolti-Korun.mp4) | - |
+| 2026-11-23 22:35 | rm-nafse-20261124-025341-1.txt | [download](https://github.com/147mmud/bangla-shorts/releases/download/short-rm-nafse-20261124-025341-1-20261123-224308/Chintar-Joare-Ei-Alo.mp4) | - |
