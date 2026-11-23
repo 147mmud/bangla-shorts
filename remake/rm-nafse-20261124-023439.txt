@@ -1,0 +1,11 @@
+channel: nafse
+channel_name: নফসে মুতমাইন্নাহ
+language: bn
+style: cinematic
+colors: #0b1d3a, #1e4f8a
+highlight: #ffd75e
+about: বাংলা ইসলামিক শর্টস: ঈমান, ধৈর্য, তওবা, নামাজ, আখলাক ও হৃদয় নরম করা উপদেশ
+scenes: 4
+images_1: remake/inbox/rm-nafse-20261124-023439-1-img1.jpg | remake/inbox/rm-nafse-20261124-023439-1-img2.jpg | remake/inbox/rm-nafse-20261124-023439-1-img3.jpg | remake/inbox/rm-nafse-20261124-023439-1-img4.jpg
+---
+1. https://www.facebook.com/reel/2338881003539440
