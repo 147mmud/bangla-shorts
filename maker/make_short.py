@@ -802,6 +802,23 @@ def make_short(script_path: Path, cfg=None, out_dir: Path = None):
             "style": style,
             "channel": cid,
         }
+        if cfg.get("seo_tags", True):
+            try:  # tags/hashtags aimed at viewers in high-paying countries
+                import ai_tools
+                ai_tags, ai_hash = ai_tools.seo_tags(title, " ".join(sentences), cfg)
+                if ai_tags:
+                    seen = set()
+                    info["tags"] = [t for t in ai_tags + info["tags"] + list(cfg.get("default_tags", []))
+                                    if not (t.lower() in seen or seen.add(t.lower()))]
+                    while len(", ".join(info["tags"])) > 480:
+                        info["tags"].pop()
+                have = set(re.findall(r"#\w+", info["description"].lower()))
+                extra = [h for h in ai_hash if h.lower() not in have][:max(0, 6 - len(have))]
+                if extra:
+                    info["description"] = (info["description"] + " " + " ".join(extra)).strip()
+                log("SEO tags:", ", ".join(info["tags"])[:300])
+            except Exception as e:  # noqa: BLE001 - keep the channel's own tags
+                log("SEO tags skipped:", str(e)[:150])
         (out_dir / f"{name}.json").write_text(json.dumps(info, ensure_ascii=False, indent=2), encoding="utf-8")
         log(f"DONE -> {final}  ({duration:.1f}s)")
         return final, info, getattr(tts, "new_voice_files", [])

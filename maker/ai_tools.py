@@ -253,6 +253,42 @@ def describe_image(path, cfg=None):
     return out
 
 
+def seo_tags(title, text, cfg):
+    """Tags + hashtags chosen for viewers in high-paying countries (US, UK, Canada, Australia...)."""
+    lang = cfg.get("language", "en")
+    name = cfg.get("channel_name", "")
+    about = cfg.get("about", "")
+    kids = any(w in (about + " " + name).lower() for w in ("kid", "child", "cartoon", "bedtime"))
+    audience = ("parents and children in the United States, United Kingdom, Canada and Australia" if kids else
+                "viewers in the United States, United Kingdom, Canada, Australia and Western Europe")
+    if lang != "en":
+        audience += f" (for a {lang}-language video: target {lang}-speaking diaspora living in those countries, " \
+                    "mix English search phrases with a few native-language ones)"
+    data = llm([
+        {"role": "system", "content": "You are a YouTube SEO expert. Reply with JSON only."},
+        {"role": "user", "content":
+            f"Channel: {name}. {about}\nVideo title: {title}\nScript: {text[:1500]}\n\n"
+            f"Write YouTube tags and hashtags for this Short so it is found by {audience}. "
+            "Use the exact phrases people in those countries type into YouTube search (long-tail, natural English, "
+            "US spelling), most important first. No misleading or unrelated tags, no other creators' or brand names"
+            + (", keep everything child-safe" if kids else "") + ".\n"
+            'Return JSON: {"tags": [12-18 tags, all together under 450 characters], '
+            '"hashtags": [3-5 hashtags without spaces, first one #shorts]}'},
+    ], want_json=True, temperature=0.5)
+    tags = [str(t).strip().strip("#") for t in data.get("tags", []) if str(t).strip()]
+    out, total = [], 0
+    for t in tags:
+        if total + len(t) + 2 > 480:
+            break
+        out.append(t); total += len(t) + 2
+    hashtags = []
+    for h in data.get("hashtags", []):
+        h = "#" + re.sub(r"[^\w]", "", str(h).lstrip("#"))
+        if len(h) > 1 and h.lower() not in [x.lower() for x in hashtags]:
+            hashtags.append(h)
+    return out, hashtags[:5]
+
+
 def _channel_rules(cfg):
     txt = (str(cfg.get("about", "")) + " " + str(cfg.get("channel_name", ""))).lower()
     if any(w in txt for w in ("islam", "ইসলাম", "quran", "কুরআন", "dua", "দোয়া", "নামাজ", "salah")):
