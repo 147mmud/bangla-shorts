@@ -109,38 +109,6 @@ def publish_release(video: Path, info: dict):
     return f"https://github.com/{repo}/releases/download/{tag}/{name}"
 
 
-def add_to_feed(info, link):
-    """feeds/<channel>.xml - a small RSS list of finished videos. Zapier watches it and uploads each new
-    video to that channel's YouTube as PRIVATE, with title, description, hashtags and tags."""
-    if not link:
-        return
-    from email.utils import formatdate
-    from xml.sax.saxutils import escape
-    import re
-    cid = re.sub(r"[^a-z0-9_-]", "", str(info.get("channel") or "default").lower()) or "default"
-    feed = ROOT / "feeds" / f"{cid}.xml"
-    feed.parent.mkdir(exist_ok=True)
-    old = feed.read_text(encoding="utf-8") if feed.exists() else ""
-    items = re.findall(r"<item>.*?</item>", old, re.S)
-    tags = [t.strip() for t in info.get("tags", []) if t.strip()]
-    item = ("<item>"
-            f"<title>{escape(info['title'][:100])}</title>"
-            f"<link>{escape(link)}</link>"
-            f'<guid isPermaLink="false">{escape(link)}</guid>'
-            f"<description>{escape(info.get('description', '')[:4900])}</description>"
-            + "".join(f"<category>{escape(t)}</category>" for t in tags[:30]) +
-            f'<enclosure url="{escape(link)}" type="video/mp4" length="0"/>'
-            f"<pubDate>{formatdate(usegmt=True)}</pubDate>"
-            "</item>")
-    items = [item] + items[:29]
-    name = escape(info.get("channel_name") or cid)
-    feed.write_text('<?xml version="1.0" encoding="UTF-8"?>\n<rss version="2.0"><channel>'
-                    f"<title>{name} - new shorts</title><link>https://github.com/{os.environ.get('GITHUB_REPOSITORY', '')}</link>"
-                    f"<description>New videos for {name}</description>\n" + "\n".join(items) +
-                    "\n</channel></rss>\n", encoding="utf-8")
-    log(f"Added to feeds/{cid}.xml (Zapier sends it to YouTube as private)")
-
-
 def cleanup_pictures(script):
     """Your uploaded remake pictures are only needed until the video is made."""
     import re
@@ -220,8 +188,8 @@ def main():
             video, info, new_voice = make_short(script, cfg)
             link = publish_release(video, info)
             try:
-                add_to_feed({**info, "channel_name": cfg.get("channels", {}).get(info.get("channel"), {}).get("name", "")
-                             if isinstance(cfg.get("channels"), dict) else ""}, link)
+                import feeds
+                feeds.publish(info, link, cfg)
             except Exception as e:  # noqa: BLE001 - the video is still made
                 log("Could not add to the YouTube feed:", e)
             yt = ""
