@@ -10,3 +10,4 @@
 | 2026-11-22 13:48 | rm-nafse-20261122-174111-1.txt | [download](https://github.com/147mmud/bangla-shorts/releases/download/short-rm-nafse-20261122-174111-1-20261122-141213/rm-nafse-20261122-174111-1.mp4) | - |
 | 2026-11-22 14:16 | nafse-20261122-200053.txt | [download](https://github.com/147mmud/bangla-shorts/releases/download/short-nafse-20261122-200053-20261122-144552/nafse-20261122-200053.mp4) | - |
 | 2026-11-23 10:31 | rm-nafse-20261123-162252-1.txt | [download](https://github.com/147mmud/bangla-shorts/releases/download/short-rm-nafse-20261123-162252-1-20261123-105612/rm-nafse-20261123-162252-1.mp4) | - |
+| 2026-11-23 11:05 | rm-nafse-20261123-162334-1.txt | [download](https://github.com/147mmud/bangla-shorts/releases/download/short-rm-nafse-20261123-162334-1-20261123-113308/rm-nafse-20261123-162334-1.mp4) | - |
