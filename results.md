@@ -15,3 +15,4 @@
 | 2026-11-23 20:30 | rm-nafse-20261124-021104-1.txt | [download](https://github.com/147mmud/bangla-shorts/releases/download/short-rm-nafse-20261124-021104-1-20261123-203821/Istegfarer-Oloukik-Khomota.mp4) | - |
 | 2026-11-23 20:50 | rm-nafse-20261124-021952-1.txt | [download](https://github.com/147mmud/bangla-shorts/releases/download/short-rm-nafse-20261124-021952-1-20261123-205808/Istigfarer-Maddhome-Bhaggo-Poribortoner-Gopon-Chabikathi.mp4) | - |
 | 2026-11-23 20:58 | rm-nafse-20261124-023439-1.txt | [download](https://github.com/147mmud/bangla-shorts/releases/download/short-rm-nafse-20261124-023439-1-20261123-210437/Rizik-Baranor-Gopon-Dua-Rate-Ghumanor-Age-Porun.mp4) | - |
+| 2026-11-23 21:04 | rm-nafse-20261124-023709-1.txt | [download](https://github.com/147mmud/bangla-shorts/releases/download/short-rm-nafse-20261124-023709-1-20261123-211540/Mathabyatha-Theke-Muktir-Islamik-Amol.mp4) | - |
