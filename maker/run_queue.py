@@ -4,7 +4,6 @@ Process waiting scripts ONE BY ONE (runs on GitHub Actions):
   scripts/*.txt  ->  video  ->  GitHub Release (download link)  ->  YouTube (optional)
   then the script is moved to scripts/done/ (or scripts/failed/ with the error).
 """
-import json
 import os
 import subprocess
 import sys
@@ -33,20 +32,81 @@ def save_progress(message):
     log("WARNING: could not push progress to GitHub")
 
 
+# ---- friendly download names: the video's own title, in plain English letters ----
+_BN_CONS = dict(zip("কখগঘঙচছজঝঞটঠডঢণতথদধনপফবভমযরলশষসহড়ঢ়য়ৎ",
+    "k kh g gh ng ch chh j jh n t th d dh n t th d dh n p f b bh m j r l sh sh s h r rh y t".split()))
+_BN_VOW = dict(zip("অআইঈউঊঋএঐওঔ", "o a i i u u ri e oi o ou".split()))
+_BN_SIGN = dict(zip("ািীুূৃেৈোৌ", "a i i u u ri e oi o ou".split()))
+_BN_MISC = {"ং": "ng", "ঃ": "h", "ঁ": "n", "্": "", "়": ""}
+_BN_DIG = dict(zip("০১২৩৪৫৬৭৮৯", "0123456789"))
+
+
+def bangla_to_latin(text):
+    out, chars = [], list(text)
+    for i, c in enumerate(chars):
+        nxt = chars[i + 1] if i + 1 < len(chars) else ""
+        if c in _BN_CONS:
+            out.append(_BN_CONS[c])
+            # the hidden "o" between two letters (not at the end of a word)
+            if nxt in _BN_CONS:
+                out.append("o")
+        elif c in _BN_SIGN: out.append(_BN_SIGN[c])
+        elif c in _BN_VOW: out.append(_BN_VOW[c])
+        elif c in _BN_MISC: out.append(_BN_MISC[c])
+        elif c in _BN_DIG: out.append(_BN_DIG[c])
+        else: out.append(c)
+    return "".join(out)
+
+
+def nice_filename(title, fallback):
+    """'গুনাহ গোপন রাখার গুরুত্ব | নফসে মুতমাইন্নাহ #shorts' -> 'Gunah-Gopon-Rakhar-Gurutto.mp4'.
+    GitHub only keeps plain English letters in download names, so other scripts are spelled out."""
+    import re
+    t = re.sub(r"#\S+", " ", title or "").split("|")[0].strip(" .।-")
+    if not t:
+        return fallback
+    latin = ""
+    if re.search(r"[^\x00-\x7f]", t):
+        try:
+            from ai_tools import llm
+            latin = llm([{"role": "user", "content":
+                "Write this video title in plain English letters (a-z) as it SOUNDS, like people type "
+                "Banglish/romanised text - do not translate. Max 8 words. Reply with only the words.\n\n" + t}],
+                temperature=0.2).strip().splitlines()[0]
+        except Exception as e:  # no AI right now -> simple letter-by-letter spelling
+            log("filename AI skipped:", str(e)[:120])
+        if not latin or re.search(r"[^\x00-\x7f]", latin):
+            latin = bangla_to_latin(t)
+            from unicodedata import normalize
+            latin = normalize("NFKD", latin).encode("ascii", "ignore").decode()
+    else:
+        latin = t
+    words = re.findall(r"[A-Za-z0-9]+", latin)[:10]
+    name = "-".join(w[:1].upper() + w[1:] for w in words)[:80].strip("-")
+    return (name or fallback) + ".mp4" if name else fallback
+
+
 def publish_release(video: Path, info: dict):
     if not os.environ.get("GH_TOKEN"):
         return ""
+    import shutil
+    import tempfile
     tag = f"short-{video.stem}-{datetime.now(timezone.utc):%Y%m%d-%H%M%S}"
     notes = f"{info['title']}\n\nLength: {info['seconds']}s\n\n{info['description']}"
+    name = nice_filename(info.get("title", ""), video.name)
+    up = Path(tempfile.mkdtemp()) / name
+    shutil.copy2(video, up)
+    log("Download name:", name)
     r = subprocess.run(
-        ["gh", "release", "create", tag, str(video), "--title", info["title"][:100], "--notes", notes],
+        ["gh", "release", "create", tag, str(up), "--title", info["title"][:100], "--notes", notes],
         cwd=ROOT, capture_output=True, text=True,
     )
+    shutil.rmtree(up.parent, ignore_errors=True)
     if r.returncode != 0:
         log("Release upload failed:", r.stderr[-500:])
         return ""
     repo = os.environ.get("GITHUB_REPOSITORY", "")
-    return f"https://github.com/{repo}/releases/download/{tag}/{video.name}"
+    return f"https://github.com/{repo}/releases/download/{tag}/{name}"
 
 
 def cleanup_pictures(script):
