@@ -9,4 +9,3 @@
 | 2026-11-22 13:02 | rm-vistara-test4-1.txt | [download](https://github.com/147mmud/bangla-shorts/releases/download/short-rm-vistara-test4-1-20261122-133321/rm-vistara-test4-1.mp4) | - |
 | 2026-11-22 13:48 | rm-nafse-20261122-174111-1.txt | [download](https://github.com/147mmud/bangla-shorts/releases/download/short-rm-nafse-20261122-174111-1-20261122-141213/rm-nafse-20261122-174111-1.mp4) | - |
 | 2026-11-22 14:16 | nafse-20261122-200053.txt | [download](https://github.com/147mmud/bangla-shorts/releases/download/short-nafse-20261122-200053-20261122-144552/nafse-20261122-200053.mp4) | - |
-| 2026-11-22 19:38 | rm-nafse-20261123-013505-1.txt | [download](https://github.com/147mmud/bangla-shorts/releases/download/short-rm-nafse-20261123-013505-1-20261122-195416/rm-nafse-20261123-013505-1.mp4) | - |
