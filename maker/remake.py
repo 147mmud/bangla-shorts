@@ -151,7 +151,7 @@ def from_file(path, tmp):
 # ------------------------------------------------------------ writing ----
 def scene_count(meta):
     try:
-        return max(3, min(10, int(str(meta.get("scenes", "6")).strip())))
+        return max(2, min(30, int(str(meta.get("scenes", "6")).strip())))
     except ValueError:
         return 6
 
@@ -179,7 +179,7 @@ Rules:
 - First sentence = a strong hook. End with a takeaway{', short dua' if islamic else ''} or a question to the viewer.
 - Only state religious quotes, hadith or facts you are certain are accurate; never invent references or numbers.
 - Tone: {'slow, emotional, cinematic storytelling' if style == 'cinematic' else 'clear, warm and engaging'}.
-- Split the script into EXACTLY {n_scenes} scenes (similar length). For each scene give one English image prompt (max 35 words) for an AI image generator: one consistent visual style, vertical picture, no text, no logos, no real or famous people. {rules}
+- Split the script into EXACTLY {n_scenes} scenes (similar length; with many scenes a scene can be one short sentence). For each scene give one English image prompt (max 35 words) for an AI image generator: one consistent visual style, vertical picture, no text, no logos, no real or famous people. {rules}
 {('- Extra instructions from the channel owner: ' + note) if note else ''}
 
 Return JSON only:
