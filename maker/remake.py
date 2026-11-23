@@ -149,7 +149,15 @@ def from_file(path, tmp):
 
 
 # ------------------------------------------------------------ writing ----
+def scene_count(meta):
+    try:
+        return max(3, min(10, int(str(meta.get("scenes", "6")).strip())))
+    except ValueError:
+        return 6
+
+
 def instructions_for(meta, has_video):
+    n_scenes = scene_count(meta)
     lang = meta.get("language", "bn")
     lname = LANG_NAMES.get(lang, lang)
     style = meta.get("style", "normal")
@@ -171,7 +179,7 @@ Rules:
 - First sentence = a strong hook. End with a takeaway{', short dua' if islamic else ''} or a question to the viewer.
 - Only state religious quotes, hadith or facts you are certain are accurate; never invent references or numbers.
 - Tone: {'slow, emotional, cinematic storytelling' if style == 'cinematic' else 'clear, warm and engaging'}.
-- Split the script into 4-7 scenes. For each scene give one English image prompt (max 35 words) for an AI image generator: one consistent visual style, vertical picture, no text, no logos, no real or famous people. {rules}
+- Split the script into EXACTLY {n_scenes} scenes (similar length). For each scene give one English image prompt (max 35 words) for an AI image generator: one consistent visual style, vertical picture, no text, no logos, no real or famous people. {rules}
 {('- Extra instructions from the channel owner: ' + note) if note else ''}
 
 Return JSON only:
@@ -187,6 +195,31 @@ def _scenes_from(data):
     if not scenes:
         raise RuntimeError("AI did not return a script")
     return data, scenes
+
+
+def fit_scenes(scenes, n):
+    """Make exactly n scenes (as many as the pictures the page asked for)."""
+    lines = [str(x).strip() for sc in scenes for x in sc["lines"] if str(x).strip()]
+    prompts = [str(sc.get("image_prompt", "")) for sc in scenes] or ["soft cinematic light"]
+    if len(scenes) == n or not lines:
+        return scenes
+    n = min(n, len(lines))
+    out = []
+    for k in range(n):
+        a, b = round(k * len(lines) / n), round((k + 1) * len(lines) / n)
+        out.append({"image_prompt": prompts[min(len(prompts) - 1, int(k * len(prompts) / n))], "lines": lines[a:b]})
+    return out
+
+
+def user_images(meta, n):
+    """Pictures uploaded on the page for source n: header "images_<n>: path | path"."""
+    raw = str(meta.get(f"images_{n}", "")).strip()
+    out = []
+    for p in [x.strip() for x in raw.split("|") if x.strip()]:
+        f = (ROOT / p).resolve()
+        if str(f).startswith(str((ROOT / "remake").resolve())) and f.is_file():
+            out.append(p)
+    return out
 
 
 def write_script(src, meta):
@@ -307,8 +340,14 @@ def process_job(job: Path):
                 head.append("description: " + str(data["description"]).replace("\n", " ")[:300])
             head.append("visuals: ai")
             lines = []
-            for sc in scenes:
+            scenes = fit_scenes(scenes, scene_count(meta))
+            mine = user_images(meta, n)
+            if mine:
+                log(f"Using {len(mine)} of your pictures; the AI makes the other {max(0, len(scenes) - len(mine))}")
+            for k, sc in enumerate(scenes):
                 prompt = str(sc.get("image_prompt", "")).replace("[", "(").replace("]", ")").replace("\n", " ")
+                if k < len(mine):
+                    prompt = "file: " + mine[k]
                 lines.append(f"[img: {prompt}]")
                 lines += [str(x).strip() for x in sc["lines"] if str(x).strip()]
             out = ROOT / "scripts" / f"{name}.txt"

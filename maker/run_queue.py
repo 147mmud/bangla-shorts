@@ -21,7 +21,8 @@ def git(*args, check=True):
 
 
 def save_progress(message):
-    git("add", "-A", "scripts", "voice", "results.md", "remake")
+    paths = [p for p in ("scripts", "voice", "results.md", "remake") if (ROOT / p).exists()]
+    git("add", "-A", *paths, check=False)
     if git("diff", "--cached", "--quiet", check=False).returncode == 0:
         return
     git("commit", "-m", message)
@@ -46,6 +47,21 @@ def publish_release(video: Path, info: dict):
         return ""
     repo = os.environ.get("GITHUB_REPOSITORY", "")
     return f"https://github.com/{repo}/releases/download/{tag}/{video.name}"
+
+
+def cleanup_pictures(script):
+    """Your uploaded remake pictures are only needed until the video is made."""
+    import re
+    done = ROOT / "scripts" / "done" / script.name
+    try:
+        text = done.read_text(encoding="utf-8")
+    except OSError:
+        return
+    for rel in re.findall(r"\[img:\s*file:\s*(remake/inbox/[^\]]+?)\s*\]", text):
+        f = ROOT / rel
+        if f.is_file():
+            subprocess.run(["git", "rm", "-q", "--ignore-unmatch", rel], cwd=ROOT)
+            f.unlink(missing_ok=True)
 
 
 def add_result(line):
@@ -110,6 +126,7 @@ def main():
                 vid = upload(video, info, cfg)
                 yt = f"https://youtu.be/{vid}" if vid else "upload failed"
             script.rename(ROOT / "scripts" / "done" / script.name)
+            cleanup_pictures(script)
             add_result(f"| {when} | {script.name} | {'[download](' + link + ')' if link else 'see Actions artifact'} | {yt or '-'} |")
             save_progress(f"Made short: {script.name} [skip ci]")
         except Exception as e:

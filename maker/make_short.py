@@ -176,7 +176,7 @@ def parse_script(path: Path):
     if "---" in [l.strip() for l in lines]:
         i = [l.strip() for l in lines].index("---")
         head = lines[:i]
-        if all((not l.strip()) or re.match(r"^\s*[A-Za-z_]+\s*:", l) for l in head):
+        if all((not l.strip()) or re.match(r"^\s*[A-Za-z_][A-Za-z0-9_]*\s*:", l) for l in head):
             for l in head:
                 if ":" in l:
                     k, v = l.split(":", 1)
@@ -562,6 +562,17 @@ def make_background(duration, cfg, tmp, query, cid=""):
     return out
 
 
+def own_image(prompt):
+    """A scene marker "[img: file: remake/inbox/x.jpg]" uses YOUR picture from the repository."""
+    p = prompt.strip()
+    if not p.lower().startswith("file:"):
+        return None
+    f = (ROOT / p.split(":", 1)[1].strip()).resolve()
+    if str(f).startswith(str(ROOT.resolve())) and f.is_file() and f.suffix.lower() in IMG_EXT:
+        return f
+    return None
+
+
 def make_ai_background(duration, sentences, scene_idx, prompts, cfg, tmp, cid, query):
     """One AI picture per scene, each shown (with slow zoom) while its sentences are spoken."""
     import ai_tools
@@ -603,8 +614,16 @@ def make_ai_background(duration, sentences, scene_idx, prompts, cfg, tmp, cid, q
     seed = abs(hash(sentences[0])) % 100000 if sentences else 1
     images = {}
     for k, a, b in bounds:
-        log(f"{'Chosen' if picks else 'AI'} picture {k + 1}/{len(bounds)}: {prompts[k][:90]}")
-        if picks:
+        kind = "Your" if prompts[k].strip().lower().startswith("file:") else ("Chosen" if picks else "AI")
+        log(f"{kind} picture {k + 1}/{len(bounds)}: {prompts[k][:90]}")
+        own = own_image(prompts[k])
+        if own:
+            img = own
+        elif prompts[k].strip().lower().startswith("file:"):
+            log("Your picture was not found, the AI will make this one")
+            img = ai_tools.ai_image(cfg.get("_fallback_prompt", "soft cinematic light, calm landscape"),
+                                    tmp / f"ai{k:02d}.jpg", seed=seed + k, style=style)
+        elif picks:
             img = ai_tools.fetch_exact(prompts[k], tmp / f"ai{k:02d}.jpg")
         else:
             img = ai_tools.ai_image(prompts[k], tmp / f"ai{k:02d}.jpg", seed=seed + k, style=style)
