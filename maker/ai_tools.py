@@ -231,6 +231,28 @@ def scene_prompts(sentences, cfg, n_scenes):
     return groups, prompts, str(data.get("style", ""))
 
 
+def describe_image(path, cfg=None):
+    """Look at YOUR picture and write an image prompt for a NEW picture just like it."""
+    import base64
+    from io import BytesIO
+    from PIL import Image
+    im = Image.open(path).convert("RGB")
+    im.thumbnail((1024, 1024))
+    buf = BytesIO()
+    im.save(buf, "JPEG", quality=85)
+    data = base64.b64encode(buf.getvalue()).decode()
+    text = ("Describe this picture as ONE English prompt (max 60 words) for an AI image generator, so it can make "
+            "a NEW picture that looks very similar: same subject, scene, composition, colours, light and mood. "
+            "Do not mention any text, letters, logos or watermarks. " + _channel_rules(cfg or {}) +
+            "Reply with the prompt only.")
+    parts = [{"inline_data": {"mime_type": "image/jpeg", "data": data}}, {"text": text}]
+    out = gemini(parts, temperature=0.4, max_tokens=400)
+    out = (out if isinstance(out, str) else str(out)).strip().strip('"')
+    if not out:
+        raise RuntimeError("empty picture description")
+    return out
+
+
 def _channel_rules(cfg):
     txt = (str(cfg.get("about", "")) + " " + str(cfg.get("channel_name", ""))).lower()
     if any(w in txt for w in ("islam", "ইসলাম", "quran", "কুরআন", "dua", "দোয়া", "নামাজ", "salah")):

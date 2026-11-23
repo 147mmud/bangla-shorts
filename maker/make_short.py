@@ -573,6 +573,23 @@ def own_image(prompt):
     return None
 
 
+def parse_my_images(value):
+    """my_images: same:remake/inbox/a.jpg | like:remake/inbox/b.jpg  ->  [("same", path), ("like", path)]
+    same = your picture as it is; like = the AI makes a new picture that looks like yours."""
+    out = []
+    for part in str(value or "").split("|"):
+        part = part.strip()
+        if not part:
+            continue
+        mode, _, rel = part.partition(":") if part.split(":", 1)[0].lower() in ("same", "like") else ("same", "", part)
+        f = (ROOT / rel.strip()).resolve()
+        if str(f).startswith(str(ROOT.resolve())) and f.is_file() and f.suffix.lower() in IMG_EXT:
+            out.append((mode.lower(), f))
+        else:
+            log("Your picture was not found:", rel.strip())
+    return out[:30]
+
+
 def make_ai_background(duration, sentences, scene_idx, prompts, cfg, tmp, cid, query):
     """One AI picture per scene, each shown (with slow zoom) while its sentences are spoken."""
     import ai_tools
@@ -583,13 +600,25 @@ def make_ai_background(duration, sentences, scene_idx, prompts, cfg, tmp, cid, q
         prompts = [p.get("u", "") for p in picks]
         n = len(prompts)
         scene_idx = [min(n - 1, int(i * n / max(1, len(sentences)))) for i in range(len(sentences))]
+    mine = cfg.get("_mine") or []
+    if mine and not prompts and cfg.get("_mine_rest") == "repeat":
+        # only your pictures: spread them evenly over the whole video
+        n = len(mine)
+        prompts = [""] * n
+        scene_idx = [min(n - 1, int(i * n / max(1, len(sentences)))) for i in range(len(sentences))]
     if not prompts:
         n = max(3, min(8, round(duration / 6)))
+        if mine:
+            n = min(max(n, len(mine)), max(1, len(sentences)))
         try:
             groups, prompts, style = ai_tools.scene_prompts(sentences, cfg, n)
         except Exception as e:  # noqa: BLE001
-            log("Could not write picture ideas, using normal background ->", e)
-            return make_background(duration, cfg, tmp, query, cid)
+            if not mine:
+                log("Could not write picture ideas, using normal background ->", e)
+                return make_background(duration, cfg, tmp, query, cid)
+            log("Could not write picture ideas, the AI scenes get a simple picture ->", e)
+            groups = ai_tools._group(sentences, n)
+            prompts = [cfg.get("_fallback_prompt", "soft cinematic light, calm landscape")] * len(groups)
         scene_idx, k = [], 0
         for gi, g in enumerate(groups):
             scene_idx += [gi] * len(g)
@@ -614,6 +643,21 @@ def make_ai_background(duration, sentences, scene_idx, prompts, cfg, tmp, cid, q
     seed = abs(hash(sentences[0])) % 100000 if sentences else 1
     images = {}
     for k, a, b in bounds:
+        if k < len(mine):  # YOUR picture for this scene (in the order you gave them)
+            mode, f = mine[k]
+            if mode == "same":
+                log(f"Your picture {k + 1}/{len(bounds)}: {f.name}")
+                images[k] = f
+                continue
+            try:
+                like = ai_tools.describe_image(f, cfg)
+                log(f"Picture like yours {k + 1}/{len(bounds)}: {like[:90]}")
+                img = ai_tools.ai_image(like, tmp / f"ai{k:02d}.jpg", seed=seed + k, style=style)
+            except Exception as e:  # noqa: BLE001
+                log("Could not re-make your picture, using it as it is ->", str(e)[:150])
+                img = None
+            images[k] = img or f
+            continue
         kind = "Your" if prompts[k].strip().lower().startswith("file:") else ("Chosen" if picks else "AI")
         log(f"{kind} picture {k + 1}/{len(bounds)}: {prompts[k][:90]}")
         own = own_image(prompts[k])
@@ -702,7 +746,13 @@ def make_short(script_path: Path, cfg=None, out_dir: Path = None):
         if picks:
             cfg["_picks"] = picks
             log(f"{len(picks)} picture(s) chosen on the page")
-        if visuals in ("ai", "ai_images", "ai-images", "picked") or scene_list or picks:
+        mine = parse_my_images(meta.get("my_images", ""))
+        if mine:
+            cfg["_mine"] = mine
+            cfg["_mine_rest"] = str(meta.get("my_rest", "ai")).strip().lower()
+            log(f"{len(mine)} of your own picture(s) given "
+                f"({sum(m == 'like' for m, _ in mine)} to be re-made by AI in the same look)")
+        if visuals in ("ai", "ai_images", "ai-images", "picked") or scene_list or picks or mine:
             cfg["about"] = meta.get("about", cfg.get("about", ""))
             bg = make_ai_background(duration, sentences, scene_idx, scene_list, cfg, tmp, cid, query)
         else:

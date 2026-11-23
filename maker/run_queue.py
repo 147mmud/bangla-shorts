@@ -117,7 +117,14 @@ def cleanup_pictures(script):
         text = done.read_text(encoding="utf-8")
     except OSError:
         return
-    for rel in re.findall(r"\[img:\s*file:\s*(remake/inbox/[^\]]+?)\s*\]", text):
+    rels = re.findall(r"\[img:\s*file:\s*(remake/inbox/[^\]]+?)\s*\]", text)
+    m = re.search(r"^\s*my_images\s*:(.*)$", text.split("\n---", 1)[0], re.M)
+    if m:  # your own pictures for a new short
+        rels += [x.split(":", 1)[-1].strip() if x.strip().split(":", 1)[0].lower() in ("same", "like") else x.strip()
+                 for x in m.group(1).split("|") if x.strip()]
+    for rel in rels:
+        if not rel.startswith("remake/inbox/"):
+            continue
         f = ROOT / rel
         if f.is_file():
             subprocess.run(["git", "rm", "-q", "--ignore-unmatch", rel], cwd=ROOT)
