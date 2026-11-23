@@ -12,3 +12,4 @@
 | 2026-11-23 10:31 | rm-nafse-20261123-162252-1.txt | [download](https://github.com/147mmud/bangla-shorts/releases/download/short-rm-nafse-20261123-162252-1-20261123-105612/rm-nafse-20261123-162252-1.mp4) | - |
 | 2026-11-23 11:05 | rm-nafse-20261123-162334-1.txt | [download](https://github.com/147mmud/bangla-shorts/releases/download/short-rm-nafse-20261123-162334-1-20261123-113308/rm-nafse-20261123-162334-1.mp4) | - |
 | 2026-11-23 11:33 | rm-nafse-20261123-162422-1.txt | [download](https://github.com/147mmud/bangla-shorts/releases/download/short-rm-nafse-20261123-162422-1-20261123-120604/rm-nafse-20261123-162422-1.mp4) | - |
+| 2026-11-23 20:30 | rm-nafse-20261124-021104-1.txt | [download](https://github.com/147mmud/bangla-shorts/releases/download/short-rm-nafse-20261124-021104-1-20261123-203821/Istegfarer-Oloukik-Khomota.mp4) | - |
