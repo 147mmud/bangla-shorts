@@ -17,3 +17,4 @@
 | 2026-11-23 20:58 | rm-nafse-20261124-023439-1.txt | [download](https://github.com/147mmud/bangla-shorts/releases/download/short-rm-nafse-20261124-023439-1-20261123-210437/Rizik-Baranor-Gopon-Dua-Rate-Ghumanor-Age-Porun.mp4) | - |
 | 2026-11-23 21:04 | rm-nafse-20261124-023709-1.txt | [download](https://github.com/147mmud/bangla-shorts/releases/download/short-rm-nafse-20261124-023709-1-20261123-211540/Mathabyatha-Theke-Muktir-Islamik-Amol.mp4) | - |
 | 2026-11-23 22:03 | rm-nafse-20261124-024038-1.txt | [download](https://github.com/147mmud/bangla-shorts/releases/download/short-rm-nafse-20261124-024038-1-20261123-221216/Allahar-Rohmot-Theke-Kokhono-Nirash-Hoben-Na.mp4) | - |
+| 2026-11-23 22:12 | rm-nafse-20261124-024228-1.txt | [download](https://github.com/147mmud/bangla-shorts/releases/download/short-rm-nafse-20261124-024228-1-20261123-222121/Chehara-Nurani-O-Sundor-Korar-Sohoj-Amol.mp4) | - |
