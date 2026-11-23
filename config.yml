@@ -75,6 +75,9 @@ channels:
     highlight_color: "#FFE066"
     default_tags: ["kids stories", "bedtime stories", "cartoon", "shorts"]
     default_description: "#shorts #kidsstories #bedtimestories"
+    # Posted to YouTube (public) at good times for US viewers, one video per time:
+    # 15:00 UTC = 10 AM New York / 7 AM California, 22:00 UTC = 5 PM New York / 2 PM California
+    post_times_utc: ["15:00", "22:00"]
   vistara:
     name: "Vistara Mind"
     language: en
