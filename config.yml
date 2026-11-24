@@ -62,6 +62,7 @@ default_style: normal     # used when a script doesn't say: normal or cinematic
 channels:
   nafse:
     name: "নফসে মুতমাইন্নাহ"
+    youtube_channel_id: UCjiCqb2ywxqKtEJkL-ngyDw   # used only to show "on YouTube" marks
     language: bn
     voice_style: "male, middle-aged, low pitch"
     background_colors: ["#0b1d3a", "#1e4f8a"]
@@ -69,6 +70,7 @@ channels:
     default_description: "#shorts #islamic #bangla"
   tinytoon:
     name: "Tiny Toon Tales"
+    youtube_channel_id: UCkfkeIcxNbY60fs6JrpXZ1w
     language: en            # English voice + English subtitles
     voice_style: "female, young adult, high pitch"
     background_colors: ["#ff9a3c", "#7b5cff"]
@@ -80,6 +82,7 @@ channels:
     post_times_utc: ["15:00", "22:00"]
   vistara:
     name: "Vistara Mind"
+    youtube_channel_id: UChgCvw3mIn0kqUI06_v2SZA
     language: en
     voice_style: "male, young adult, moderate pitch"
     background_colors: ["#120d2b", "#3a2a7a"]
