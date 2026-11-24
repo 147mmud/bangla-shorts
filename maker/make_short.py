@@ -41,7 +41,7 @@ STYLE_PRESETS = {
         "highlight_color": "#E8C27A",
         "subtitle_position": 70,
         "subtitle_anim": "fade",
-        "darken": 0.28,
+        "darken": 0.12,
         "image_seconds": 6,
         "zoom_speed": 0.0006,
         "voice_speed": 0.95,
@@ -607,7 +607,7 @@ def make_ai_background(duration, sentences, scene_idx, prompts, cfg, tmp, cid, q
         prompts = [""] * n
         scene_idx = [min(n - 1, int(i * n / max(1, len(sentences)))) for i in range(len(sentences))]
     if not prompts:
-        n = max(3, min(8, round(duration / 6)))
+        n = max(4, min(12, round(duration / 5)))
         if mine:
             n = min(max(n, len(mine)), max(1, len(sentences)))
         try:
@@ -623,10 +623,16 @@ def make_ai_background(duration, sentences, scene_idx, prompts, cfg, tmp, cid, q
         for gi, g in enumerate(groups):
             scene_idx += [gi] * len(g)
         scene_idx = (scene_idx + [len(groups) - 1] * len(sentences))[:len(sentences)]
-    if cfg.get("_style") == "cinematic":
-        style = (style + ", cinematic film still, dramatic warm light, shallow depth of field").strip(", ")
-    elif cfg.get("ai_image_style"):
-        style = (style + ", " + cfg["ai_image_style"]).strip(", ")
+    # one fixed look (same characters, same art style) + high-quality words for every AI picture
+    bible = ""
+    if not picks:
+        try:
+            bible = ai_tools.look_sheet(prompts, cfg)
+            if bible:
+                log("Look of this video:", bible[:160])
+        except Exception as e:  # noqa: BLE001
+            log("Look sheet skipped:", str(e)[:120])
+    style = ", ".join(x for x in (bible, style, ai_tools.quality_words(cfg), cfg.get("ai_image_style", "")) if x)
 
     # start time of each scene = start of its first sentence
     starts = {}
@@ -640,14 +646,24 @@ def make_ai_background(duration, sentences, scene_idx, prompts, cfg, tmp, cid, q
         b = starts[order[j + 1]] if j + 1 < len(order) else duration
         bounds.append((k, a, b))
 
+    # long scenes are cut into several shots (new camera angle every ~4 s) so the video never stands still
+    shot_len = float(cfg.get("shot_seconds", 4.0))
+    shots = []  # (scene k, shot number, start, end)
+    for k, a, b in bounds:
+        m = max(1, min(4, math.ceil((b - a) / shot_len - 0.25)))
+        for i in range(m):
+            shots.append((k, i, a + (b - a) * i / m, a + (b - a) * (i + 1) / m))
+
     seed = abs(hash(sentences[0])) % 100000 if sentences else 1
     images = {}
-    for k, a, b in bounds:
+    for k, i, a, b in shots:
+        key = (k, i)
         if k < len(mine):  # YOUR picture for this scene (in the order you gave them)
             mode, f = mine[k]
-            if mode == "same":
-                log(f"Your picture {k + 1}/{len(bounds)}: {f.name}")
-                images[k] = f
+            if mode == "same" or i > 0:
+                if i == 0:
+                    log(f"Your picture {k + 1}/{len(bounds)}: {f.name}")
+                images[key] = images.get((k, 0), f) if i > 0 else f
                 continue
             try:
                 like = ai_tools.describe_image(f, cfg)
@@ -656,45 +672,105 @@ def make_ai_background(duration, sentences, scene_idx, prompts, cfg, tmp, cid, q
             except Exception as e:  # noqa: BLE001
                 log("Could not re-make your picture, using it as it is ->", str(e)[:150])
                 img = None
-            images[k] = img or f
+            images[key] = img or f
             continue
-        kind = "Your" if prompts[k].strip().lower().startswith("file:") else ("Chosen" if picks else "AI")
-        log(f"{kind} picture {k + 1}/{len(bounds)}: {prompts[k][:90]}")
         own = own_image(prompts[k])
-        if own:
-            img = own
-        elif prompts[k].strip().lower().startswith("file:"):
+        if own or picks:  # a fixed picture: later shots of the scene re-use it with another camera move
+            if i == 0:
+                kind = "Your" if own else "Chosen"
+                log(f"{kind} picture {k + 1}/{len(bounds)}: {prompts[k][:90]}")
+                images[key] = own or ai_tools.fetch_exact(prompts[k], tmp / f"ai{k:02d}.jpg")
+            else:
+                images[key] = images.get((k, 0))
+            continue
+        base = prompts[k]
+        if base.strip().lower().startswith("file:"):
             log("Your picture was not found, the AI will make this one")
-            img = ai_tools.ai_image(cfg.get("_fallback_prompt", "soft cinematic light, calm landscape"),
-                                    tmp / f"ai{k:02d}.jpg", seed=seed + k, style=style)
-        elif picks:
-            img = ai_tools.fetch_exact(prompts[k], tmp / f"ai{k:02d}.jpg")
-        else:
-            img = ai_tools.ai_image(prompts[k], tmp / f"ai{k:02d}.jpg", seed=seed + k, style=style)
-        if img:
-            images[k] = img
-    if not images:
+            base = cfg.get("_fallback_prompt", "soft cinematic light, calm landscape")
+        shot = ai_tools.SHOTS[i % len(ai_tools.SHOTS)] if i else ""
+        log(f"AI picture {k + 1}/{len(bounds)} shot {i + 1}: {base[:80]}{shot}")
+        img = ai_tools.ai_image(base + shot, tmp / f"ai{k:02d}_{i}.jpg", seed=seed + k * 7 + i * 101, style=style)
+        images[key] = img or images.get((k, 0))
+    if not any(images.values()):
         log("No AI pictures could be made, using normal background")
         return make_background(duration, cfg, tmp, query, cid)
+    return animate_shots(shots, images, duration, tmp)
 
-    enc = ["-c:v", "libx264", "-preset", "veryfast", "-crf", "20", "-pix_fmt", "yuv420p", "-r", str(FPS), "-an"]
-    clips, last_ok = [], next(iter(images.values()))
-    for j, (k, a, b) in enumerate(bounds):
-        src = images.get(k, last_ok)
+
+MOVES = ["in", "pan_r", "out", "up", "pan_l", "in_l", "down", "out_r"]
+
+
+def animate_shots(shots, images, duration, tmp):
+    """Every shot gets its own smooth camera move; shots blend into each other with a soft cross-fade."""
+    T = 0.45  # cross-fade length (s)
+    enc = ["-c:v", "libx264", "-preset", "veryfast", "-crf", "14", "-pix_fmt", "yuv420p", "-r", str(FPS), "-an"]
+    big_w, big_h = W * 2, H * 2  # work at 2x size so slow zooms/pans stay smooth (no shaking)
+    clips, durs, last_ok = [], [], next(v for v in images.values() if v)
+    for j, (k, i, a, b) in enumerate(shots):
+        src = images.get((k, i)) or last_ok
         last_ok = src
-        frames = max(2, int(round((b - a) * FPS)))
-        zs = min(0.0015, 0.18 / frames)
-        z = f"min(1.0+{zs:.6f}*on,1.2)" if j % 2 == 0 else f"max(1.2-{zs:.6f}*on,1.0)"
-        vf = (f"scale={W*4//3}:{H*4//3}:force_original_aspect_ratio=increase,crop={W*4//3}:{H*4//3},"
-              f"zoompan=z='{z}':d={frames}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s={W}x{H}:fps={FPS}")
+        d = (b - a) + (T if j < len(shots) - 1 else 0)
+        frames = max(3, int(round(d * FPS)))
+        p = f"(on/{frames - 1})"
+        ease = f"(0.5-0.5*cos(PI*{p}))"  # slow start, slow end
+        mv = MOVES[j % len(MOVES)]
+        zmax = 1.16
+        if mv in ("in", "in_l"):
+            z = f"1+{zmax - 1}*{ease}"
+        elif mv in ("out", "out_r"):
+            z = f"{zmax}-{zmax - 1}*{ease}"
+        else:
+            z = f"{zmax - 0.04}"
+        cx, cy = "iw/2-(iw/zoom/2)", "ih/2-(ih/zoom/2)"
+        span_x, span_y = "(iw-iw/zoom)", "(ih-ih/zoom)"
+        x, y = cx, cy
+        if mv == "pan_r":
+            x = f"{span_x}*{ease}"
+        elif mv == "pan_l":
+            x = f"{span_x}*(1-{ease})"
+        elif mv == "up":
+            y = f"{span_y}*(1-{ease})"
+        elif mv == "down":
+            y = f"{span_y}*{ease}"
+        elif mv == "in_l":
+            x = f"{span_x}*0.25"
+        elif mv == "out_r":
+            x = f"{span_x}*0.75"
+        vf = (f"scale={big_w}:{big_h}:force_original_aspect_ratio=increase,crop={big_w}:{big_h},"
+              f"zoompan=z='{z}':d={frames}:x='{x}':y='{y}':s={W}x{H}:fps={FPS},"
+              f"unsharp=5:5:0.6:5:5:0.0")
         clip = tmp / f"aiseg{j:03d}.mp4"
         run(["ffmpeg", "-y", "-loglevel", "error", "-loop", "1", "-i", str(src), "-vf", vf,
              "-frames:v", str(frames), *enc, str(clip)])
         clips.append(clip)
-    (tmp / "ailist.txt").write_text("".join(f"file '{c.name}'\n" for c in clips))
-    run(["ffmpeg", "-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", "ailist.txt",
-         "-c", "copy", "bg.mp4"], cwd=tmp)
-    return tmp / "bg.mp4"
+        durs.append(frames / FPS)
+    if len(clips) == 1:
+        return clips[0]
+    # chain the cross-fades in small groups (keeps memory low on the free GitHub computer)
+    def xfade(files, lens, out):
+        ins, parts, prev, off = [], [], "[0:v]", 0.0
+        for n, f in enumerate(files):
+            ins += ["-i", f.name]
+        for n in range(1, len(files)):
+            off += lens[n - 1] - T
+            lab = f"[x{n}]" if n < len(files) - 1 else "[v]"
+            parts.append(f"{prev}[{n}:v]xfade=transition=fade:duration={T}:offset={off:.3f}{lab}")
+            prev = lab
+        run(["ffmpeg", "-y", "-loglevel", "error", *ins, "-filter_complex", ";".join(parts), "-map", "[v]",
+             *enc, out.name], cwd=tmp)
+        return sum(lens) - T * (len(files) - 1)
+    group, level = 8, 0
+    while len(clips) > 1:
+        nclips, nlens = [], []
+        for g in range(0, len(clips), group):
+            fs, ls = clips[g:g + group], durs[g:g + group]
+            if len(fs) == 1:
+                nclips.append(fs[0]); nlens.append(ls[0]); continue
+            out = tmp / f"xf{level}_{g:03d}.mp4"
+            # inner groups keep their trailing overlap so the next group can fade in over it
+            nlens.append(xfade(fs, ls, out)); nclips.append(out)
+        clips, durs, level = nclips, nlens, level + 1
+    return clips[0]
 
 
 # ------------------------------------------------------------------ main ----
@@ -766,8 +842,9 @@ def make_short(script_path: Path, cfg=None, out_dir: Path = None):
         k = max(0.0, min(1.0, 1 - dark))
         look = ""
         if cfg.get("film_look"):
-            look = ("eq=contrast=1.08:saturation=0.82,colorbalance=rs=0.06:gs=0.01:bs=-0.06:rm=0.03:bm=-0.03,"
-                    "vignette=angle=PI/4.2,noise=alls=3:allf=t,")
+            look = ("eq=contrast=1.06:saturation=1.05:gamma=1.03,"
+                    "colorbalance=rs=0.04:gs=0.0:bs=-0.04:rh=-0.02:bh=0.03,"
+                    "vignette=angle=PI/5,noise=alls=2:allf=t,")
         bars = int(cfg.get("letterbox", 0) or 0)
         if bars:
             look += (f"drawbox=x=0:y=0:w=iw:h={bars}:color=black:t=fill,"
@@ -784,7 +861,7 @@ def make_short(script_path: Path, cfg=None, out_dir: Path = None):
             af = "[1:a]anull[a]"
         final = out_dir / f"{name}.mp4"
         cmd += ["-filter_complex", f"{vf};{af}", "-map", "[v]", "-map", "[a]", "-t", f"{duration:.2f}",
-                "-c:v", "libx264", "-preset", "veryfast", "-crf", "23", "-maxrate", "6M", "-bufsize", "12M",
+                "-c:v", "libx264", "-preset", "medium", "-crf", "18", "-maxrate", "14M", "-bufsize", "28M",
                 "-pix_fmt", "yuv420p", "-r", str(FPS),
                 "-c:a", "aac", "-b:a", "192k", "-ar", "48000", "-movflags", "+faststart", str(final.resolve())]
         log("Rendering final video...")

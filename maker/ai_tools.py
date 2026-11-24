@@ -289,6 +289,43 @@ def seo_tags(title, text, cfg):
     return out, hashtags[:5]
 
 
+def look_sheet(prompts, cfg):
+    """One fixed description of the recurring characters + art style, added to EVERY picture,
+    so the same bear/child/place looks the same in every scene."""
+    joined = "\n".join(f"{i + 1}. {p}" for i, p in enumerate(prompts) if p and not p.lower().startswith("file:"))
+    if not joined:
+        return ""
+    data = llm([
+        {"role": "system", "content": "You are an art director. Reply with JSON only."},
+        {"role": "user", "content":
+            f"Channel: {cfg.get('channel_name', '')}. {cfg.get('about', '')}\n"
+            "These image prompts are scenes of ONE short video:\n" + joined + "\n\n"
+            "Write a fixed visual bible so every picture looks like the same film: describe each recurring "
+            "character exactly (species/age, colours, clothes, distinctive features) and the art style, palette "
+            "and lighting. Max 60 words. " + _channel_rules(cfg) +
+            '\nReturn JSON: {"bible": "..."}'},
+    ], want_json=True, temperature=0.3)
+    return str(data.get("bible", "")).strip()
+
+
+QUALITY = {
+    "kids": "Pixar-style 3D animated film still, vibrant cheerful colours, soft global illumination, "
+            "expressive big eyes, clean detailed textures, bright and well lit, masterpiece",
+    "cinematic": "cinematic film still, anamorphic lens, dramatic volumetric light, rich colour grading, "
+                 "shallow depth of field, sharp focus, 8k detail, masterpiece",
+    "normal": "high quality illustration, sharp focus, rich detail, beautiful lighting, masterpiece",
+}
+SHOTS = ["", ", close-up shot", ", wide establishing shot", ", low angle shot", ", over-the-shoulder view",
+         ", medium shot from the side"]
+
+
+def quality_words(cfg):
+    about = (str(cfg.get("about", "")) + " " + str(cfg.get("channel_name", ""))).lower()
+    if any(w in about for w in ("kid", "child", "cartoon", "toon", "bedtime")):
+        return QUALITY["kids"]
+    return QUALITY["cinematic"] if cfg.get("_style") == "cinematic" else QUALITY["normal"]
+
+
 def _channel_rules(cfg):
     txt = (str(cfg.get("about", "")) + " " + str(cfg.get("channel_name", ""))).lower()
     if any(w in txt for w in ("islam", "ইসলাম", "quran", "কুরআন", "dua", "দোয়া", "নামাজ", "salah")):
