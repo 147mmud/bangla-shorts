@@ -68,6 +68,9 @@ channels:
     background_colors: ["#0b1d3a", "#1e4f8a"]
     default_tags: ["islamic shorts", "bangla waz", "ইসলামিক", "shorts"]
     default_description: "#shorts #islamic #bangla"
+    # Posted to YouTube automatically, max 3 a day; the rest wait in line for the next day:
+    # 12:00, 13:30, 15:00 UTC = 6:00 PM, 7:30 PM, 9:00 PM Bangladesh time
+    post_times_utc: ["12:00", "13:30", "15:00"]
   tinytoon:
     name: "Tiny Toon Tales"
     youtube_channel_id: UCkfkeIcxNbY60fs6JrpXZ1w
