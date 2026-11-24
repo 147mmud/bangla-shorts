@@ -138,8 +138,88 @@ def check_live():
     log(f"Live check done ({len(live)} known on YouTube)")
 
 
+# ---------- clock: release on time, even when GitHub's own timer is late ----------
+GRACE_MIN = 150   # a posting time missed by more than this is skipped (no burst of late posts)
+
+
+def _slots_passed(times, now):
+    """Posting times (as datetimes) of yesterday and today that are already past, newest first."""
+    from datetime import datetime, timedelta, timezone
+    out = []
+    for day in (now.date(), (now - timedelta(days=1)).date()):
+        for t in times:
+            h, m = (int(x) for x in str(t).split(":"))
+            at = datetime(day.year, day.month, day.day, h, m, tzinfo=timezone.utc)
+            if at <= now:
+                out.append(at)
+    return sorted(out, reverse=True)
+
+
+def _next_slot(times, now):
+    from datetime import datetime, timedelta, timezone
+    best = None
+    for day in (now.date(), (now + timedelta(days=1)).date()):
+        for t in times:
+            h, m = (int(x) for x in str(t).split(":"))
+            at = datetime(day.year, day.month, day.day, h, m, tzinfo=timezone.utc)
+            if at > now and (best is None or at < best):
+                best = at
+    return best
+
+
+def tick():
+    """Release one waiting video per channel for its latest posting time, only once per posting time.
+    Safe to call as often as you like. Prints seconds until the next posting time (any channel)."""
+    import yaml
+    from datetime import datetime, timedelta, timezone
+    cfg = yaml.safe_load((ROOT / "config.yml").read_text(encoding="utf-8")) or {}
+    now = datetime.now(timezone.utc)
+    statef = ROOT / "feeds" / "posted_slots.json"
+    state = json.loads(statef.read_text(encoding="utf-8")) if statef.exists() else {}
+    changed = False
+    nxt = None
+    for cid, ch in (cfg.get("channels") or {}).items():
+        times = (ch or {}).get("post_times_utc") or []
+        if not times:
+            continue
+        n = _next_slot(times, now)
+        if n and (nxt is None or n < nxt):
+            nxt = n
+        passed = _slots_passed(times, now)
+        if not passed:
+            continue
+        slot = passed[0]
+        key = slot.strftime("%Y-%m-%d %H:%M")
+        if state.get(cid) and state[cid] >= key:
+            continue
+        if now - slot > timedelta(minutes=GRACE_MIN):
+            log(f"{cid}: posting time {key} UTC was missed long ago - skipped, video stays in line")
+            state[cid] = key
+            changed = True
+            continue
+        pend = ROOT / "feeds" / "pending" / f"{cid}.json"
+        items = json.loads(pend.read_text(encoding="utf-8") or "[]") if pend.exists() else []
+        per = int(ch.get("posts_per_time", 1))
+        for it in items[:per]:
+            add_to_feed(it["info"], it["link"])
+            log(f"{cid}: posting time {key} UTC -> {it['info'].get('title', '')[:60]}")
+        if items:
+            pend.write_text(json.dumps(items[per:], ensure_ascii=False, indent=1), encoding="utf-8")
+        else:
+            log(f"{cid}: posting time {key} UTC - nothing waiting")
+        state[cid] = key
+        changed = True
+    if changed:
+        statef.write_text(json.dumps(state, indent=1), encoding="utf-8")
+    wait = int((nxt - now).total_seconds()) if nxt else 3600
+    print(f"NEXT_WAIT={wait}", flush=True)
+    return wait
+
+
 if __name__ == "__main__":
     if sys.argv[1:] == ["release"]:
         release_due()
     elif sys.argv[1:] == ["check"]:
         check_live()
+    elif sys.argv[1:] == ["tick"]:
+        tick()
