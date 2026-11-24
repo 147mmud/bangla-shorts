@@ -1,4 +1,5 @@
 name: Post on time (Zapier feeds)
+# (schedule refreshed 2026-11-24)
 
 # Some channels (see post_times_utc in config.yml) don't post right after a video is made.
 # The video waits in feeds/pending/ and this moves ONE waiting video per channel into its
