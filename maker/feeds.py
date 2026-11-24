@@ -86,6 +86,60 @@ def release_due():
     return moved
 
 
+def _norm(t):
+    import re
+    t = re.sub(r"#\S+", " ", str(t or "")).lower()
+    return re.sub(r"[^\w]+", " ", t).strip()
+
+
+def check_live():
+    """Look at each channel's public YouTube list (RSS) and note which of our videos are really on YouTube.
+    Writes feeds/live.json {release tag: {"video": id, "seen": time}} - Shorts Studio shows a mark for these."""
+    import re
+    import urllib.request
+    from datetime import datetime, timezone
+    from xml.sax.saxutils import unescape
+    import yaml
+    cfg = yaml.safe_load((ROOT / "config.yml").read_text(encoding="utf-8")) or {}
+    livef = ROOT / "feeds" / "live.json"
+    live = json.loads(livef.read_text(encoding="utf-8")) if livef.exists() else {}
+    before = dict(live)
+    for cid, ch in (cfg.get("channels") or {}).items():
+        yid = (ch or {}).get("youtube_channel_id")
+        feed = ROOT / "feeds" / f"{cid}.xml"
+        if not yid or not feed.exists():
+            continue
+        try:
+            req = urllib.request.Request(f"https://www.youtube.com/feeds/videos.xml?channel_id={yid}",
+                                         headers={"User-Agent": "Mozilla/5.0"})
+            xml = urllib.request.urlopen(req, timeout=30).read().decode("utf-8", "replace")
+        except Exception as e:  # noqa: BLE001
+            log(f"{cid}: could not read YouTube list ->", e)
+            continue
+        on_yt = {}
+        for entry in re.findall(r"<entry>(.*?)</entry>", xml, re.S):
+            vid = re.search(r"<yt:videoId>([^<]+)</yt:videoId>", entry)
+            title = re.search(r"<title>([^<]*)</title>", entry)
+            if vid and title:
+                on_yt[_norm(unescape(title.group(1)))] = vid.group(1)
+        ours = feed.read_text(encoding="utf-8")
+        for item in re.findall(r"<item>(.*?)</item>", ours, re.S):
+            title = re.search(r"<title>([^<]*)</title>", item)
+            link = re.search(r"releases/download/([^/<]+)/", item)
+            if not (title and link):
+                continue
+            key = _norm(unescape(title.group(1)))
+            if key in on_yt and link.group(1) not in live:
+                live[link.group(1)] = {"video": on_yt[key], "ch": cid,
+                                       "seen": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%MZ")}
+                log(f"{cid}: on YouTube -> {title.group(1)[:60]}")
+    if live != before:
+        livef.write_text(json.dumps(live, ensure_ascii=False, indent=1), encoding="utf-8")
+    log(f"Live check done ({len(live)} known on YouTube)")
+
+
 if __name__ == "__main__":
     if sys.argv[1:] == ["release"]:
         release_due()
+    elif sys.argv[1:] == ["check"]:
+        check_live()
