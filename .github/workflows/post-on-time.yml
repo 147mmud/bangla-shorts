@@ -1,48 +1,64 @@
 name: Post on time (Zapier feeds)
-# (schedule refreshed 2026-11-24)
 
-# Some channels (see post_times_utc in config.yml) don't post right after a video is made.
-# The video waits in feeds/pending/ and this moves ONE waiting video per channel into its
-# feed at each posting time; Zapier then uploads it to YouTube.
-# Every 2 hours it also checks each channel's public YouTube list and notes which of our
-# videos are really on YouTube (feeds/live.json) - Shorts Studio shows a mark for those.
+# Channels with post_times_utc (config.yml) don't post right after a video is made: the video
+# waits in feeds/pending/ and is moved into the channel's feed at each posting time; Zapier then
+# uploads it to YouTube.
+# GitHub's own timer (cron) is often hours late, so this job keeps its own clock: it waits until
+# the next posting time, posts, and before its 6-hour limit starts a fresh copy of itself.
+# The hourly cron below only restarts the clock if it ever stops.
 on:
   schedule:
-    - cron: "0 15,22 * * *"    # posting times: 15:00 and 22:00 UTC (10 AM and 5 PM New York)
-    - cron: "25 */2 * * *"     # "is it on YouTube yet?" check
+    - cron: "7 * * * *"
   workflow_dispatch:
 
 permissions:
   contents: write
+  actions: write
 
 concurrency:
   group: post-on-time
   cancel-in-progress: false
 
 jobs:
-  release:
+  clock:
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 345
     steps:
       - uses: actions/checkout@v4
       - run: pip install -q pyyaml
-      - name: Release the next waiting video of each channel
-        if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 15,22 * * *'
-        run: |
-          if ls feeds/pending/*.json >/dev/null 2>&1 && grep -q '"link"' feeds/pending/*.json; then
-            python maker/feeds.py release
-          else
-            echo "Nothing waiting."
-          fi
-      - name: Which videos are on YouTube now?
-        continue-on-error: true
-        run: python maker/feeds.py check
-      - name: Save
+      - name: Post at each posting time (about 5.5 hours, then hand over)
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           git config user.name "shorts-bot"
           git config user.email "shorts-bot@users.noreply.github.com"
-          git add feeds
-          git diff --cached --quiet && exit 0
-          git commit -m "Feeds: posting queue / YouTube marks [skip ci]"
-          for i in 1 2 3; do git push && exit 0; git pull --rebase --autostash; done
-          exit 1
+          save() {
+            git add feeds
+            git diff --cached --quiet && return 0
+            git commit -q -m "Feeds: posting queue / YouTube marks"
+            for i in 1 2 3 4; do git push -q && return 0; git pull -q --rebase --autostash; done
+          }
+          end=$(( $(date +%s) + 330*60 ))
+          last_check=0
+          while :; do
+            git pull -q --rebase --autostash || true
+            wait=$(python maker/feeds.py tick | tee /dev/stderr | sed -n 's/^NEXT_WAIT=//p' | tail -1)
+            if [ $(( $(date +%s) - last_check )) -ge 7200 ]; then
+              python maker/feeds.py check || true
+              last_check=$(date +%s)
+            fi
+            save
+            now=$(date +%s)
+            left=$(( end - now ))
+            [ -z "$wait" ] && wait=3600
+            nap=$(( wait + 20 ))
+            [ $nap -gt 7200 ] && nap=7200
+            if [ $nap -ge $left ]; then break; fi
+            echo "Sleeping $nap s"
+            sleep $nap
+          done
+      - name: Hand over to a fresh copy
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run post-on-time.yml --ref main -R "${{ github.repository }}"
