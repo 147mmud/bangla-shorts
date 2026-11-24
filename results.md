@@ -21,3 +21,4 @@
 | 2026-11-23 22:58 | rm-tinytoon-20261124-042937-1.txt | [download](https://github.com/147mmud/bangla-shorts/releases/download/short-rm-tinytoon-20261124-042937-1-20261123-231217/The-Secret-On-Your-Tummy.mp4) | - |
 | 2026-11-23 23:12 | rm-tinytoon-20261124-043151-1.txt | [download](https://github.com/147mmud/bangla-shorts/releases/download/short-rm-tinytoon-20261124-043151-1-20261123-232629/Barnaby-S-Magic-Sky-Adventure.mp4) | - |
 | 2026-11-23 23:38 | rm-tinytoon-20261124-043233-1.txt | [download](https://github.com/147mmud/bangla-shorts/releases/download/short-rm-tinytoon-20261124-043233-1-20261123-235134/Barnaby-S-Big-Flight-A-Cardboard-Adventure.mp4) | - |
+| 2026-11-24 12:47 | rm-tinytoon-20261124-184001-1.txt (remake of https://www.youtube.com/shorts/Elt0FydnXmk) | FAILED - see scripts/failed/rm-tinytoon-20261124-184001-1.error.txt | - |
