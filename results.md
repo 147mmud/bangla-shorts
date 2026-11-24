@@ -15,3 +15,4 @@
 | 2026-11-24 12:50 | rm-tinytoon-20261124-184002-1.txt | [download](https://github.com/147mmud/bangla-shorts/releases/download/short-rm-tinytoon-20261124-184002-1-20261124-130803/Fly-High-Little-Pilot.mp4) | - |
 | 2026-11-24 13:08 | rm-tinytoon-20261124-184003-1.txt | [download](https://github.com/147mmud/bangla-shorts/releases/download/short-rm-tinytoon-20261124-184003-1-20261124-132812/Build-A-Rainbow-Tower-With-Us.mp4) | - |
 | 2026-11-24 14:49 | tt-pip-bunny (made on PC) | [download](https://github.com/147mmud/bangla-shorts/releases/download/short-pc-tt-pip-bunny-20261124-144925/Pip-the-Bunny-Is-Afraid-of-the-Dark.mp4) | - |
+| 2026-11-24 19:18 | rm-tinytoon-20261125-011411-1.txt | [download](https://github.com/147mmud/bangla-shorts/releases/download/short-rm-tinytoon-20261125-011411-1-20261124-193903/Barnaby-Bear-S-Fun-Bus-Ride.mp4) | - |
