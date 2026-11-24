@@ -1,0 +1,13 @@
+channel: nafse
+channel_name: নফসে মুতমাইন্নাহ
+language: bn
+style: cinematic
+colors: #0b1d3a, #1e4f8a
+highlight: #ffd75e
+voice_engine: omnivoice
+maker: openmontage
+kind: remake
+about: বাংলা ইসলামিক শর্টস: ঈমান, ধৈর্য, তওবা, নামাজ, আখলাক ও হৃদয় নরম করা উপদেশ
+scenes: 6
+---
+1. https://www.facebook.com/reel/1107261932121050
