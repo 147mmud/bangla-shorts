@@ -5,6 +5,7 @@ name: Post on time (Zapier feeds)
 # uploads it to YouTube.
 # GitHub's own timer (cron) is often hours late, so this job keeps its own clock: it waits until
 # the next posting time, posts, and before its 6-hour limit starts a fresh copy of itself.
+# It also hands PC (OpenMontage) jobs to the cloud when the PC does not take them (maker/pc_jobs.py).
 # The hourly cron below only restarts the clock if it ever stops.
 on:
   schedule:
@@ -25,6 +26,8 @@ jobs:
     timeout-minutes: 345
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # full history: pc_jobs.py reads how long a job has been waiting
       - run: pip install -q pyyaml
       - name: Post at each posting time (about 5.5 hours, then hand over)
         env:
@@ -33,7 +36,7 @@ jobs:
           git config user.name "shorts-bot"
           git config user.email "shorts-bot@users.noreply.github.com"
           save() {
-            git add feeds
+            git add feeds pc-jobs scripts remake 2>/dev/null || true
             git diff --cached --quiet && return 0
             git commit -q -m "Feeds: posting queue / YouTube marks"
             for i in 1 2 3 4; do git push -q && return 0; git pull -q --rebase --autostash; done
@@ -47,12 +50,15 @@ jobs:
               python maker/feeds.py check || true
               last_check=$(date +%s)
             fi
+            moved=$(python maker/pc_jobs.py takeover | tee /dev/stderr | sed -n 's/^MOVED=//p' | tail -1)
+            git add pc-jobs scripts remake 2>/dev/null || true
             save
+            if [ "${moved:-0}" -gt 0 ]; then gh workflow run make-shorts.yml --ref main -R "${{ github.repository }}" || true; fi
             now=$(date +%s)
             left=$(( end - now ))
             [ -z "$wait" ] && wait=3600
             nap=$(( wait + 20 ))
-            [ $nap -gt 7200 ] && nap=7200
+            [ $nap -gt 900 ] && nap=900   # wake every 15 min (posting times + PC-job fallback)
             if [ $nap -ge $left ]; then break; fi
             echo "Sleeping $nap s"
             sleep $nap
