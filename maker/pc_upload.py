@@ -49,7 +49,7 @@ def main():
         feeds.publish({"title": info.get("title", stem), "description": info.get("description", ""),
                        "tags": info.get("tags", []), "channel": info.get("channel", "")}, link, cfg)
         with open(ROOT / "results.md", "a", encoding="utf-8") as f:
-            f.write(f"| {datetime.now(timezone.utc):%Y-%m-%d %H:%M} | {stem} (made on PC) | [download]({link}) | - |\n")
+            f.write(f"| {datetime.now(timezone.utc):%Y-%m-%d %H:%M} | {stem}.txt (made on PC) | [download]({link}) | - |\n")
         for p in parts + [card]:
             p.unlink()
         done.append(stem)

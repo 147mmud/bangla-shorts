@@ -121,6 +121,10 @@ def resolve_settings(cfg, meta):
     hl = re.findall(r"#?[0-9a-fA-F]{6}", str(meta.get("highlight", "")))
     if hl:
         out["highlight_color"] = "#" + hl[0].lstrip("#")
+    # voice chosen on the Shorts Studio page: omnivoice (channel's cloned voice) or edge (Microsoft voice)
+    ve = str(meta.get("voice_engine", "")).strip().lower()
+    if ve in ("omnivoice", "edge"):
+        out["voice_engine"] = ve
     out["language"] = lang
     out["channel_name"] = meta.get("channel_name") or ch.get("name") or cfg.get("channel_name", "")
     out["_channel"] = cid
