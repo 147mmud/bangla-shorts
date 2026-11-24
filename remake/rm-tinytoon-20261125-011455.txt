@@ -1,0 +1,11 @@
+channel: tinytoon
+channel_name: Tiny Toon Tales
+language: en
+style: cinematic
+colors: #ff9a3c, #7b5cff
+highlight: #ffe066
+about: Short English cartoon stories for kids aged 3-8 in the US and UK: cute animal characters, gentle humour and a simple kind lesson
+note: শেষে একটা প্রশ্ন রাখো, বাচ্চাদের মতো সহজ করো
+scenes: 6
+---
+1. https://www.youtube.com/shorts/poWI4n59mwc
