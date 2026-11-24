@@ -24,3 +24,4 @@
 | 2026-11-24 12:47 | rm-tinytoon-20261124-184001-1.txt (remake of https://www.youtube.com/shorts/Elt0FydnXmk) | FAILED - see scripts/failed/rm-tinytoon-20261124-184001-1.error.txt | - |
 | 2026-11-24 12:49 | rm-tinytoon-20261124-184004-1.txt (remake of https://www.youtube.com/shorts/y8kneKeNyCI) | FAILED - see scripts/failed/rm-tinytoon-20261124-184004-1.error.txt | - |
 | 2026-11-24 12:50 | rm-tinytoon-20261124-184002-1.txt | [download](https://github.com/147mmud/bangla-shorts/releases/download/short-rm-tinytoon-20261124-184002-1-20261124-130803/Fly-High-Little-Pilot.mp4) | - |
+| 2026-11-24 13:08 | rm-tinytoon-20261124-184003-1.txt | [download](https://github.com/147mmud/bangla-shorts/releases/download/short-rm-tinytoon-20261124-184003-1-20261124-132812/Build-A-Rainbow-Tower-With-Us.mp4) | - |
