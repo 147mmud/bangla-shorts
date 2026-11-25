@@ -28,3 +28,4 @@
 | 2026-11-25 00:37 | rm-nafse-20261125-031828-1.txt | [download](https://github.com/147mmud/bangla-shorts/releases/download/short-rm-nafse-20261125-031828-1-20261125-011428/Mehnat-Chara-Ki-Jannat-Pawa-Sombhob.mp4) | - |
 | 2026-11-25 01:14 | rm-nafse-20261125-031859-1.txt | [download](https://github.com/147mmud/bangla-shorts/releases/download/short-rm-nafse-20261125-031859-1-20261125-014144/Jiboner-Choyti-Kothin-Muhurte-Rasulullaher-Choyti-Mohashoktishali-Dua.mp4) | - |
 | 2026-11-25 01:42 | rm-nafse-20261125-031919-1.txt | [download](https://github.com/147mmud/bangla-shorts/releases/download/short-rm-nafse-20261125-031919-1-20261125-020814/Mrityur-Porer-Bastobota-Jante-Parle-Ki-Hoto.mp4) | - |
+| 2026-11-25 02:08 | rm-nafse-20261125-031932-1.txt | [download](https://github.com/147mmud/bangla-shorts/releases/download/short-rm-nafse-20261125-031932-1-20261125-023208/Duniyar-Jonno-Namaj-Charben-Na.mp4) | - |
