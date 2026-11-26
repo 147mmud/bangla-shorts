@@ -36,7 +36,7 @@ jobs:
           git config user.name "shorts-bot"
           git config user.email "shorts-bot@users.noreply.github.com"
           save() {
-            git add feeds pc-jobs scripts remake 2>/dev/null || true
+            git add feeds pc-jobs flow-jobs scripts remake 2>/dev/null || true
             git diff --cached --quiet && return 0
             git commit -q -m "Feeds: posting queue / YouTube marks"
             for i in 1 2 3 4; do git push -q && return 0; git pull -q --rebase --autostash; done
@@ -51,7 +51,7 @@ jobs:
               last_check=$(date +%s)
             fi
             moved=$(python maker/pc_jobs.py takeover | tee /dev/stderr | sed -n 's/^MOVED=//p' | tail -1)
-            git add pc-jobs scripts remake 2>/dev/null || true
+            git add pc-jobs flow-jobs scripts remake 2>/dev/null || true
             save
             if [ "${moved:-0}" -gt 0 ]; then gh workflow run make-shorts.yml --ref main -R "${{ github.repository }}" || true; fi
             now=$(date +%s)
