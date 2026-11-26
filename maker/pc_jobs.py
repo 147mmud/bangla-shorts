@@ -44,7 +44,37 @@ def takeover():
         job.unlink()
         moved += 1
         log(f"{job.name}: PC did not take it in {int(age)} min -> made in the cloud instead")
+    moved += flow_takeover()
     print(f"MOVED={moved}")
+    return moved
+
+
+FLOW_WAIT_MIN = 8 * 60   # a Flow (3D) job not made within 8 hours is made the normal way (pictures)
+
+
+def flow_takeover():
+    """Google Flow jobs wait in flow-jobs/ for the PC agent. If the PC was off for too long,
+    the cloud makes the video with moving AI pictures instead, so no posting day is missed."""
+    base = ROOT / "flow-jobs"
+    moved = 0
+    if not base.is_dir():
+        return 0
+    for job in sorted(base.glob("*.txt")):
+        age = _age_min(job)
+        if age < FLOW_WAIT_MIN:
+            continue
+        lines = job.read_text(encoding="utf-8").split("\n")
+        text = "\n".join(l for l in lines if not l.strip().lower().startswith("maker:"))
+        if "\nvisuals:" not in "\n" + text.split("\n---", 1)[0] and "\n---" in text:
+            head, body = text.split("\n---", 1)
+            text = head + "\nvisuals: ai\n---" + body
+        remake = "\nkind: remake" in "\n" + text
+        dest = ROOT / ("remake" if remake else "scripts") / job.name
+        dest.parent.mkdir(exist_ok=True)
+        dest.write_text(text, encoding="utf-8")
+        job.unlink()
+        moved += 1
+        log(f"{job.name}: Flow did not make it in {int(age // 60)} h -> made in the cloud with pictures instead")
     return moved
 
 

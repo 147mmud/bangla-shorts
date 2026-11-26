@@ -303,6 +303,7 @@ def process_job(job: Path):
     if not sources:
         raise ValueError("No links or files found in the remake job.")
     keep = ["channel", "channel_name", "language", "style", "colors", "highlight", "about", "pick_images", "voice_engine"]
+    flow = str(meta.get("maker", "")).strip().lower() == "flow"  # 3D clips will be made in Google Flow
     results = []
     for n, (kind, ref) in enumerate(sources, 1):
         name = f"{job.stem}-{n}"
@@ -350,9 +351,12 @@ def process_job(job: Path):
                     prompt = "file: " + mine[k]
                 lines.append(f"[img: {prompt}]")
                 lines += [str(x).strip() for x in sc["lines"] if str(x).strip()]
-            out = ROOT / "scripts" / f"{name}.txt"
+            if flow:
+                head.append("maker: flow")
+            out = ROOT / ("flow-jobs" if flow else "scripts") / f"{name}.txt"
+            out.parent.mkdir(exist_ok=True)
             out.write_text("\n".join(head) + "\n---\n" + "\n".join(lines) + "\n", encoding="utf-8")
-            log(f"New script written: scripts/{out.name} ({sum(len(s['lines']) for s in scenes)} lines, "
+            log(f"New script written: {out.parent.name}/{out.name} ({sum(len(s['lines']) for s in scenes)} lines, "
                 f"{len(scenes)} scenes)")
             results.append((out, None, ref, name))
         except Exception as e:  # noqa: BLE001

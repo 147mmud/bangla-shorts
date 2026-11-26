@@ -701,6 +701,62 @@ def make_ai_background(duration, sentences, scene_idx, prompts, cfg, tmp, cid, q
     return animate_shots(shots, images, duration, tmp)
 
 
+def make_flow_background(duration, sentences, scene_idx, folder: Path, tmp: Path):
+    """Moving 3D clips made in Google Flow (Veo): one clip per scene, cut to the length of that scene's
+    voice, slowed down a little when a scene is longer than its clip, soft cross-fades between scenes.
+    Keeps the clips' own quiet sound (rain, wind, water) as a background ambience track."""
+    clips = sorted(folder.glob("s*.mp4"), key=lambda p: int(re.sub(r"\D", "", p.stem) or 0))
+    if not clips:
+        raise FileNotFoundError(f"No Flow clips in {folder}")
+    n, T = len(clips), 0.4
+    spans = getattr(build_voice, "spans", [])
+    if not scene_idx or max(scene_idx) + 1 != n:
+        scene_idx = [min(n - 1, int(i * n / max(1, len(sentences)))) for i in range(len(sentences))]
+    bounds = [0.0]
+    for k in range(1, n):
+        first = next((i for i, x in enumerate(scene_idx) if x == k), None)
+        bounds.append(max(bounds[-1] + 1.0, spans[first][0] - 0.15) if first is not None and first < len(spans)
+                      else bounds[-1] + (duration - bounds[-1]) / (n - k + 1))
+    bounds.append(duration)
+    parts, lens = [], []
+    for k, src in enumerate(clips):
+        need = bounds[k + 1] - bounds[k] + (T if k < n - 1 else 0.05)
+        try:
+            have = float(subprocess.check_output(["ffprobe", "-v", "error", "-show_entries", "format=duration",
+                                                  "-of", "csv=p=0", str(src)]).strip()) - 0.05
+        except Exception:  # noqa: BLE001
+            have = 7.9
+        speed = max(0.5, min(1.0, have / need))
+        has_a = bool(subprocess.run(["ffprobe", "-v", "error", "-select_streams", "a", "-show_entries", "stream=index",
+                                     "-of", "csv=p=0", str(src)], capture_output=True, text=True).stdout.strip())
+        out = tmp / f"flow{k:02d}.mp4"
+        a_in = (f"[0:a]atempo={speed:.4f},apad,atrim=0:{need:.3f},asetpts=PTS-STARTPTS,volume=0.22[a]" if has_a else
+                f"anullsrc=r=48000:cl=stereo,atrim=0:{need:.3f}[a]")
+        run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(src), "-filter_complex",
+             f"[0:v]setpts=PTS/{speed:.4f},scale={W}:{H}:force_original_aspect_ratio=increase:flags=lanczos,"
+             f"crop={W}:{H},fps={FPS},tpad=stop_mode=clone:stop_duration=2,trim=0:{need:.3f},setpts=PTS-STARTPTS[v];{a_in}",
+             "-map", "[v]", "-map", "[a]", "-c:v", "libx264", "-preset", "veryfast", "-crf", "14", "-pix_fmt", "yuv420p",
+             "-c:a", "aac", "-ar", "48000", "-ac", "2", str(out)])
+        parts.append(out)
+        lens.append(need)
+        log(f"Flow scene {k + 1}/{n}: {bounds[k]:.1f}s-{bounds[k + 1]:.1f}s ({src.name}, speed {speed:.2f})")
+    if n == 1:
+        return parts[0]
+    ins, fc, pv, pa, off = [], [], "0:v", "0:a", 0.0
+    for p in parts:
+        ins += ["-i", p.name]
+    for k in range(1, n):
+        off += lens[k - 1] - T
+        fc.append(f"[{pv}][{k}:v]xfade=transition=fade:duration={T}:offset={off:.3f}[v{k}]")
+        fc.append(f"[{pa}][{k}:a]acrossfade=d={T}[a{k}]")
+        pv, pa = f"v{k}", f"a{k}"
+    out = tmp / "flow_bg.mp4"
+    run(["ffmpeg", "-y", "-loglevel", "error", *ins, "-filter_complex", ";".join(fc), "-map", f"[{pv}]",
+         "-map", f"[{pa}]", "-c:v", "libx264", "-preset", "veryfast", "-crf", "14", "-pix_fmt", "yuv420p",
+         "-c:a", "aac", "-ar", "48000", str(out.name)], cwd=tmp)
+    return out
+
+
 MOVES = ["in", "pan_r", "out", "up", "pan_l", "in_l", "down", "out_r"]
 
 
@@ -832,7 +888,13 @@ def make_short(script_path: Path, cfg=None, out_dir: Path = None):
             cfg["_mine_rest"] = str(meta.get("my_rest", "ai")).strip().lower()
             log(f"{len(mine)} of your own picture(s) given "
                 f"({sum(m == 'like' for m, _ in mine)} to be re-made by AI in the same look)")
-        if visuals in ("ai", "ai_images", "ai-images", "picked") or scene_list or picks or mine:
+        flow_dir = ROOT / meta["flow_clips"] if meta.get("flow_clips") else None
+        if flow_dir and flow_dir.is_dir() and any(flow_dir.glob("s*.mp4")):
+            log("Using the moving 3D clips made in Google Flow:", meta["flow_clips"])
+            bg = make_flow_background(duration, sentences, scene_idx, flow_dir, tmp)
+            cfg["_bg_audio"] = True
+            cfg["darken"] = min(float(cfg.get("darken", 0.12)), 0.05)
+        elif visuals in ("ai", "ai_images", "ai-images", "picked") or scene_list or picks or mine:
             cfg["about"] = meta.get("about", cfg.get("about", ""))
             bg = make_ai_background(duration, sentences, scene_idx, scene_list, cfg, tmp, cid, query)
         else:
@@ -857,10 +919,16 @@ def make_short(script_path: Path, cfg=None, out_dir: Path = None):
                 if cfg.get("film_look") else "")
         vf = (f"[0:v]format=rgb24,colorchannelmixer=rr={k}:gg={k}:bb={k},{look}"
               f"ass=subs.ass:fontsdir={ROOT/'fonts'}{fade},format=yuv420p[v]")
+        amb = cfg.get("_bg_audio")
         if music and vol > 0:
             cmd += ["-stream_loop", "-1", "-i", str(random.choice(music))]
             af = (f"[2:a]volume={vol},afade=t=out:st={max(0, duration-1.5):.2f}:d=1.5[m];"
-                  f"[1:a][m]amix=inputs=2:duration=first:normalize=0[a]")
+                  + (f"[0:a]afade=t=out:st={max(0, duration-1.2):.2f}:d=1.2[amb];"
+                     f"[1:a][m][amb]amix=inputs=3:duration=first:normalize=0[a]" if amb else
+                     f"[1:a][m]amix=inputs=2:duration=first:normalize=0[a]"))
+        elif amb:
+            af = (f"[0:a]afade=t=out:st={max(0, duration-1.2):.2f}:d=1.2[amb];"
+                  f"[1:a][amb]amix=inputs=2:duration=first:normalize=0[a]")
         else:
             af = "[1:a]anull[a]"
         final = out_dir / f"{name}.mp4"
@@ -882,6 +950,7 @@ def make_short(script_path: Path, cfg=None, out_dir: Path = None):
             "script": script_path.name,
             "style": style,
             "channel": cid,
+            "flow": bool(meta.get("flow_clips")),
         }
         if cfg.get("seo_tags", True):
             try:  # tags/hashtags aimed at viewers in high-paying countries

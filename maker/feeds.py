@@ -60,8 +60,16 @@ def publish(info, link, cfg):
         pend = ROOT / "feeds" / "pending" / f"{_cid(info)}.json"
         pend.parent.mkdir(parents=True, exist_ok=True)
         items = json.loads(pend.read_text(encoding="utf-8")) if pend.exists() else []
-        items.append({"info": {k: info[k] for k in ("title", "description", "tags", "channel", "channel_name") if k in info},
-                      "link": link})
+        entry = {"info": {k: info[k] for k in ("title", "description", "tags", "channel", "channel_name") if k in info},
+                 "link": link}
+        if info.get("flow"):  # 3D (Google Flow) videos jump the line, after other 3D ones already waiting
+            entry["flow"] = True
+            pos = 0
+            while pos < len(items) and items[pos].get("flow"):
+                pos += 1
+            items.insert(pos, entry)
+        else:
+            items.append(entry)
         pend.write_text(json.dumps(items, ensure_ascii=False, indent=1), encoding="utf-8")
         log(f"Waiting for the next posting time ({', '.join(ch['post_times_utc'])} UTC): {info.get('title', '')[:60]}")
     else:

@@ -20,7 +20,7 @@ def git(*args, check=True):
 
 
 def save_progress(message):
-    paths = [p for p in ("scripts", "voice", "results.md", "remake", "feeds") if (ROOT / p).exists()]
+    paths = [p for p in ("scripts", "voice", "results.md", "remake", "feeds", "flow-jobs", "flow-clips") if (ROOT / p).exists()]
     git("add", "-A", *paths, check=False)
     if git("diff", "--cached", "--quiet", check=False).returncode == 0:
         return
@@ -131,6 +131,23 @@ def cleanup_pictures(script):
             f.unlink(missing_ok=True)
 
 
+def cleanup_flow(script):
+    """A Flow (3D) short is made: its clips and its waiting job are no longer needed."""
+    import re
+    done = ROOT / "scripts" / "done" / script.name
+    try:
+        head = done.read_text(encoding="utf-8").split("\n---", 1)[0]
+    except OSError:
+        return
+    m = re.search(r"^\s*flow_clips\s*:\s*(flow-clips/[\w.\-]+)\s*$", head, re.M)
+    if not m:
+        return
+    for rel in (m.group(1), f"flow-jobs/{script.name}", f"flow-jobs/working/{script.name}"):
+        if (ROOT / rel).exists():
+            subprocess.run(["git", "rm", "-r", "-q", "--ignore-unmatch", rel], cwd=ROOT)
+            subprocess.run(["rm", "-rf", str(ROOT / rel)])
+
+
 def add_result(line):
     p = ROOT / "results.md"
     if not p.exists():
@@ -199,6 +216,7 @@ def main():
                 yt = f"https://youtu.be/{vid}" if vid else "upload failed"
             script.rename(ROOT / "scripts" / "done" / script.name)
             cleanup_pictures(script)
+            cleanup_flow(script)
             add_result(f"| {when} | {script.name} | {'[download](' + link + ')' if link else 'see Actions artifact'} | {yt or '-'} |")
             save_progress(f"Made short: {script.name} [skip ci]")
         except Exception as e:
