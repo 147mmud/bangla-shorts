@@ -80,9 +80,9 @@ channels:
     highlight_color: "#FFE066"
     default_tags: ["kids stories", "bedtime stories", "cartoon", "shorts"]
     default_description: "#shorts #kidsstories #bedtimestories"
-    # Posted to YouTube (public) at good times for US viewers, one video per time:
-    # 15:00 UTC = 10 AM New York / 7 AM California, 22:00 UTC = 5 PM New York / 2 PM California
-    post_times_utc: ["15:00", "22:00"]
+    # One good 3D video a day (quality, not quantity), posted public at a good time for US viewers:
+    # 22:00 UTC = 5 PM New York / 2 PM California (4 AM Bangladesh)
+    post_times_utc: ["22:00"]
   vistara:
     name: "Vistara Mind"
     youtube_channel_id: UChgCvw3mIn0kqUI06_v2SZA
@@ -92,6 +92,9 @@ channels:
     highlight_color: "#B9A6FF"
     default_tags: ["motivation", "mindset", "shorts"]
     default_description: "#shorts #motivation"
+    # 3 videos a day, posted public at good times for US viewers:
+    # 13:00 UTC = 8 AM New York, 17:00 UTC = 12 PM New York, 23:00 UTC = 6 PM New York
+    post_times_utc: ["13:00", "17:00", "23:00"]
 
 # ---------- QUEUE ----------
 max_per_run: 5            # how many scripts to make in one go (the rest wait for the next run)
