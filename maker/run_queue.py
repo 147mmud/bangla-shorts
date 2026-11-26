@@ -20,7 +20,7 @@ def git(*args, check=True):
 
 
 def save_progress(message):
-    paths = [p for p in ("scripts", "voice", "results.md", "remake", "feeds", "flow-jobs", "flow-clips") if (ROOT / p).exists()]
+    paths = [p for p in ("scripts", "voice", "results.md", "remake", "feeds", "flow-jobs", "flow-clips", "meta") if (ROOT / p).exists()]
     git("add", "-A", *paths, check=False)
     if git("diff", "--cached", "--quiet", check=False).returncode == 0:
         return
@@ -148,6 +148,20 @@ def cleanup_flow(script):
             subprocess.run(["rm", "-rf", str(ROOT / rel)])
 
 
+def save_post_info(info, link):
+    """Title / description / keywords of every video, so Shorts Studio can show them for uploading by hand."""
+    import json
+    import re
+    m = re.search(r"/releases/download/([^/]+)/", link or "")
+    if not m:
+        return
+    d = ROOT / "meta"
+    d.mkdir(exist_ok=True)
+    data = {k: info.get(k) for k in ("title", "description", "tags", "channel", "seconds") if k in info}
+    data["link"] = link
+    (d / f"{m.group(1)}.json").write_text(json.dumps(data, ensure_ascii=False, indent=1), encoding="utf-8")
+
+
 def add_result(line):
     p = ROOT / "results.md"
     if not p.exists():
@@ -204,6 +218,7 @@ def main():
         try:
             video, info, new_voice = make_short(script, cfg)
             link = publish_release(video, info)
+            save_post_info(info, link)
             try:
                 import feeds
                 feeds.publish(info, link, cfg)
