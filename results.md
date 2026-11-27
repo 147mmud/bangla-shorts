@@ -32,3 +32,4 @@
 | 2026-11-26 20:30 | nafse-20261127-013709.txt (made on PC) | [download](https://github.com/147mmud/bangla-shorts/releases/download/short-pc-nafse-20261127-013709-20261126-203018/Sabrer-Odrishyo-Proshanti.mp4) | - |
 | 2026-11-27 09:48 | nafse-20261127-043936.txt | [download](https://github.com/147mmud/bangla-shorts/releases/download/short-nafse-20261127-043936-20261127-095815/Halal-Rijiker-Borkot-Baranor-Charti-Amol.mp4) | - |
 | 2026-11-27 09:58 | nafse-20261127-130000.txt | [download](https://github.com/147mmud/bangla-shorts/releases/download/short-nafse-20261127-130000-20261127-100421/Allahr-Opor-Bhorosa-Korle-Tinii-Jotheshto.mp4) | - |
+| 2026-11-27 11:51 | nafse-20261127-170230.txt | [download](https://github.com/147mmud/bangla-shorts/releases/download/short-nafse-20261127-170230-20261127-120120/Nirob-Arti-Ar-Chawar-Adob.mp4) | - |
