@@ -1,0 +1,33 @@
+{
+ "files": [
+  "s01.jpg",
+  "s02.jpg",
+  "s03.jpg",
+  "s04.jpg"
+ ],
+ "prompts": [
+  "Foreground: Open book and prayer beads on a wooden stand. Middle: Warmly lit mosque pillars with geometric patterns. Background: A radiant golden dawn sky. Cinematic lighting, peaceful atmosphere, no people, no text.",
+  "Foreground: Detailed open book and wooden beads. Middle: Elegant stone arches of a mosque bathed in warm light. Background: First light of a golden sunrise. High resolution, serene, architectural focus, no text.",
+  "Foreground: Gentle ripples on a calm water surface. Middle: Lush green trees casting soft shadows on a stone path. Background: A vast sky with clouds parting to reveal bright sunlight. Natural, tranquil landscape, no animals.",
+  "Foreground: A glowing ornate lantern with intricate cutouts. Middle: A silent, empty marble courtyard. Background: A soft purple and orange evening sky. Ethereal lighting, calm architectural beauty, no humans."
+ ],
+ "style": "Cinematic photorealism with a serene, spiritual atmosphere. Palette: warm gold, amber, emerald green, and soft twilight purples. Lighting: volumetric 'God rays' and golden hour glows. Recurring: dark wood book stands, polished stone arches with geometric patterns, and ornate brass lanterns. Textures: weathered paper, smooth marble, and rippling water. No living beings., cinematic film still, anamorphic lens, dramatic volumetric light, rich colour grading, shallow depth of field, sharp focus, 8k detail, masterpiece, empty scene without any people, no humans, no men, no women, no children, no faces, no hands, no body parts, no silhouettes, no animals",
+ "seed": 51416,
+ "scene_idx": [
+  0,
+  0,
+  1,
+  2,
+  2,
+  3
+ ],
+ "sentences": [
+  "নিজের ভুলগুলো আমরা কত সহজে লুকিয়ে ফেলি?",
+  "কিন্তু হিসাবের দিনের আগেই নিজের হিসাব নেওয়া জরুরি।",
+  "নিজেকে প্রশ্ন করুন, আজ কারও হক নষ্ট করেননি তো?",
+  "আত্মসমালোচনাই হৃদয়কে পরিশুদ্ধ করে।",
+  "আমিন লিখুন।",
+  "এরকম আরও ভিডিও পেতে চাইলে এখনই সাবস্ক্রাইব করুন।"
+ ],
+ "library": {}
+}
