@@ -19,6 +19,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 WARN_AT = 10       # notify when this many unused pictures are left
 RECENT_VIDEOS = 3  # never re-use a picture that was in one of the last few videos
+# scripts sent before the library started (name time, Bangladesh time) keep the old way: AI pictures only
+LIBRARY_FROM = "20261127-171500"
 
 
 def log(*a):
@@ -97,6 +99,10 @@ def pick(cid, scene_texts, scene_notes, cfg, video, skip=()):
     d, items = load(cid)
     n = len(scene_texts)
     if not d or not n or cfg.get("use_library") is False:
+        return [None] * n
+    m = re.search(r"(\d{8})-(\d{6})", str(video or ""))
+    if m and f"{m.group(1)}-{m.group(2)}" < LIBRARY_FROM:
+        log("Script was sent before the picture library started - AI pictures as before")
         return [None] * n
     st = _state(d)
     recent = {f for _, fs in st["history"][-RECENT_VIDEOS:] for f in fs}
