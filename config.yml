@@ -71,6 +71,8 @@ channels:
     # Posted to YouTube automatically, max 3 a day; the rest wait in line for the next day:
     # 12:00, 13:30, 15:00 UTC = 6:00 PM, 7:30 PM, 9:00 PM Bangladesh time
     post_times_utc: ["12:00", "13:30", "15:00"]
+    # Pictures are made first and wait for your OK in Shorts Studio; the video is made only after you approve
+    approve_images: true
   tinytoon:
     name: "Tiny Toon Tales"
     youtube_channel_id: UCkfkeIcxNbY60fs6JrpXZ1w
