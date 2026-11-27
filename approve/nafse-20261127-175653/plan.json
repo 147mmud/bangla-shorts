@@ -1,0 +1,31 @@
+{
+ "files": [
+  "s01.jpg",
+  "s02.jpg",
+  "s03.jpg"
+ ],
+ "prompts": [
+  "Foreground features golden rays of early morning sunlight touching the ground. In the middle ground, a serene, mirror-like lake sits motionless. Background reveals soft, pastel clouds floating gently across a tranquil morning sky, photorealistic style.",
+  "Foreground highlights detailed wooden prayer beads resting on smooth ground. In the middle ground, delicate white flower petals are scattered softly. Background displays quiet, undulating desert sand dunes under a gentle dawn horizon, photorealistic style.",
+  "Foreground features a brightly glowing brass lantern. In the middle ground, a soft, textured prayer mat is spread open. Background highlights a breathtaking golden dawn sky filled with warm sunlight, peaceful morning atmosphere, photorealistic style."
+ ],
+ "style": "Photorealistic, serene cinematic style. Lighting features radiant golden dawn sunbeams and soft volumetric morning glow. Palette blends warm golds, pastel blush, soft cream, and deep amber. Recurring motifs include intricate dark wooden prayer beads, an antique glowing brass lantern, and neutral-textured prayer mats set against calm deserts, mirror-like waters, and pastel dawn skies. Zero living beings., high quality illustration, sharp focus, rich detail, beautiful lighting, masterpiece, empty scene without any people, no humans, no men, no women, no children, no faces, no hands, no body parts, no silhouettes, no animals",
+ "seed": 54460,
+ "scene_idx": [
+  0,
+  0,
+  1,
+  1,
+  2,
+  2
+ ],
+ "sentences": [
+  "একই দুআ বারবার করে ক্লান্ত?",
+  "কবুলের আরও একটি গোপন শর্ত আছে।",
+  "অন্যের কল্যাণে হাত তুলতে শিখুন।",
+  "লোকদেখানো নয়, একান্ত গোপনে ডাকুন।",
+  "নিঃস্বার্থ চাওয়ায় বরকত নেমে আসে।",
+  "আমিন লিখুন।"
+ ],
+ "library": {}
+}
