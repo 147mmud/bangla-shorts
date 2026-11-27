@@ -1,0 +1,521 @@
+{
+ "channel": "nafse",
+ "about": "Pictures you chose for this channel. file = picture in this folder, bn/en = what is in it. Add new pictures: put the jpg here and add a line.",
+ "items": [
+  {
+   "file": "001.jpg",
+   "bn": "সবুজ বন, ছোট ঝরনা, পাথর, দিনের আলো",
+   "en": "green forest, small waterfall stream, mossy rocks, daylight"
+  },
+  {
+   "file": "002.jpg",
+   "bn": "সাদা মসজিদ, মিনার, ফুলের নকশার মেঝে, নীল আকাশ",
+   "en": "white mosque with minaret, flower-pattern marble courtyard, blue sky"
+  },
+  {
+   "file": "003.jpg",
+   "bn": "মরুভূমি, সূর্যাস্ত, বসে থাকা মানুষ পেছন থেকে",
+   "en": "desert at sunset, man in white sitting on sand seen from behind"
+  },
+  {
+   "file": "005.jpg",
+   "bn": "মসজিদ, সূর্যাস্ত, পানিতে প্রতিবিম্ব",
+   "en": "mosque at sunset, reflection in water"
+  },
+  {
+   "file": "006.jpg",
+   "bn": "বন্ধ কুরআন নীল মলাট, তসবিহ, সবুজ পটভূমি",
+   "en": "closed Quran with blue cover, prayer beads, green blurred background"
+  },
+  {
+   "file": "008.jpg",
+   "bn": "জায়নামাজে দোয়া করা মানুষ, জানালার উষ্ণ আলো",
+   "en": "man praying on prayer mat, warm light from mosque window"
+  },
+  {
+   "file": "009.jpg",
+   "bn": "রাত, চাঁদ, আলোকিত মসজিদ",
+   "en": "night, crescent moon, lit mosque"
+  },
+  {
+   "file": "010.jpg",
+   "bn": "হাতে তসবিহ, ঝাপসা পটভূমি",
+   "en": "hand holding prayer beads, blurred background"
+  },
+  {
+   "file": "011.jpg",
+   "bn": "লণ্ঠন, মসজিদ, সন্ধ্যার আকাশ",
+   "en": "lantern, mosque, evening sky"
+  },
+  {
+   "file": "012.jpg",
+   "bn": "টুপি পরা মানুষ পেছন থেকে, শহর, মিনার, সূর্যাস্ত",
+   "en": "man in prayer cap seen from behind, city, minaret, sunset"
+  },
+  {
+   "file": "013.jpg",
+   "bn": "খোলা কুরআন রেহালে, জানালার আলো, ঘর",
+   "en": "open Quran on wooden stand, window light, room"
+  },
+  {
+   "file": "014.jpg",
+   "bn": "দোয়ায় হাত তোলা মানুষ, সূর্যাস্ত, সমুদ্র",
+   "en": "silhouette of man raising hands in dua, sunset over sea"
+  },
+  {
+   "file": "015.jpg",
+   "bn": "মসজিদ, নীল আকাশ, পানিতে প্রতিবিম্ব, দিন",
+   "en": "mosque, blue sky, reflection in water, day"
+  },
+  {
+   "file": "016.jpg",
+   "bn": "পাহাড়, আঁকাবাঁকা পথ, সূর্যোদয়",
+   "en": "mountains, winding path, sunrise"
+  },
+  {
+   "file": "017.jpg",
+   "bn": "খোলা কুরআন, তসবিহ, কাছ থেকে",
+   "en": "open Quran with prayer beads, close-up"
+  },
+  {
+   "file": "018.jpg",
+   "bn": "জায়নামাজে বসা মানুষ, পর্দা দেওয়া জানালা, নরম আলো",
+   "en": "man sitting on prayer mat, curtained window, soft light"
+  },
+  {
+   "file": "019.jpg",
+   "bn": "রাত, চাঁদ, তারা, আলোকিত মসজিদ",
+   "en": "night, crescent moon, stars, lit mosque"
+  },
+  {
+   "file": "020.jpg",
+   "bn": "টুপি পরা শিশু কুরআন পড়ছে",
+   "en": "boy in prayer cap reading Quran"
+  },
+  {
+   "file": "021.jpg",
+   "bn": "মসজিদের ভেতর, খিলান, নকশা করা জানালা",
+   "en": "inside mosque, arches, ornate round window"
+  },
+  {
+   "file": "022.jpg",
+   "bn": "মরুভূমি, একা দাঁড়ানো মানুষ, সূর্যাস্ত",
+   "en": "desert, lone man standing, sunset"
+  },
+  {
+   "file": "023.jpg",
+   "bn": "লণ্ঠন, কুরআন, উষ্ণ আলো, রাত",
+   "en": "lantern and Quran, warm light, night"
+  },
+  {
+   "file": "024.jpg",
+   "bn": "খেজুর গাছ, মসজিদ, গোধূলি",
+   "en": "palm trees, mosque silhouette, dusk"
+  },
+  {
+   "file": "025.jpg",
+   "bn": "মসজিদের দরজায় বসা মানুষ, অন্ধকার, বাইরে আলো",
+   "en": "man sitting in mosque doorway, dark, light outside"
+  },
+  {
+   "file": "026.jpg",
+   "bn": "হাতে কুরআন, সোনালি নকশা",
+   "en": "hands holding Quran, golden ornament cover"
+  },
+  {
+   "file": "027.jpg",
+   "bn": "মসজিদ, সূর্যাস্ত, সবুজ ঘাস",
+   "en": "mosque at sunset, green grass"
+  },
+  {
+   "file": "028.jpg",
+   "bn": "হিজাব পরা মেয়ে, মাথা নিচু, প্রার্থনা",
+   "en": "girl in hijab, head bowed, praying"
+  },
+  {
+   "file": "029.jpg",
+   "bn": "বন, নদীর স্রোত, সূর্যের রশ্মি",
+   "en": "forest river stream, sun rays"
+  },
+  {
+   "file": "030.jpg",
+   "bn": "মসজিদের ভেতরের করিডোর, একা মানুষ, উষ্ণ আলো",
+   "en": "mosque corridor, lone man walking, warm light"
+  },
+  {
+   "file": "031.jpg",
+   "bn": "কুরআনের মলাট কাছ থেকে, অন্ধকার",
+   "en": "Quran cover close-up, dark"
+  },
+  {
+   "file": "032.jpg",
+   "bn": "পাহাড়ের চূড়ায় বসা মানুষ, সূর্যাস্ত",
+   "en": "man sitting on mountain top, sunset"
+  },
+  {
+   "file": "033.jpg",
+   "bn": "হাতে তসবিহ, জানালার আলো",
+   "en": "hand with prayer beads, window light"
+  },
+  {
+   "file": "034.jpg",
+   "bn": "চাঁদ, মিনার, গম্বুজ, গোধূলি",
+   "en": "crescent moon, minaret, dome, dusk"
+  },
+  {
+   "file": "035.jpg",
+   "bn": "টুপি পরা শিশু, মাথা নিচু",
+   "en": "boy in prayer cap, head bowed"
+  },
+  {
+   "file": "036.jpg",
+   "bn": "মসজিদ, পানিতে প্রতিবিম্ব, গোধূলি আকাশ",
+   "en": "mosque, reflection in water, dusk sky"
+  },
+  {
+   "file": "037.jpg",
+   "bn": "আল্লাহ নামের ক্যালিগ্রাফি, খোদাই করা",
+   "en": "carved Allah calligraphy"
+  },
+  {
+   "file": "038.jpg",
+   "bn": "সিজদায় মানুষ, জায়নামাজ",
+   "en": "man in sujood prostration on prayer mat"
+  },
+  {
+   "file": "039.jpg",
+   "bn": "ব্যাগ কাঁধে মানুষ, পাহাড়, গোধূলি",
+   "en": "man with backpack on mountain, dusk"
+  },
+  {
+   "file": "040.jpg",
+   "bn": "লণ্ঠন, কুরআন, উষ্ণ আলো, রাত (২)",
+   "en": "lantern and Quran, warm light, night"
+  },
+  {
+   "file": "041.jpg",
+   "bn": "মসজিদ, সন্ধ্যা, আলো জ্বলছে",
+   "en": "mosque in the evening, lights on"
+  },
+  {
+   "file": "042.jpg",
+   "bn": "খোলা কুরআন, তসবিহ, উষ্ণ আলো",
+   "en": "open Quran with prayer beads, warm light"
+  },
+  {
+   "file": "043.jpg",
+   "bn": "বনের রাস্তা, সূর্যের আলো",
+   "en": "forest road, sunlight"
+  },
+  {
+   "file": "044.jpg",
+   "bn": "মসজিদের জানালার সামনে বসা মানুষ, জায়নামাজ",
+   "en": "man sitting in front of mosque window on prayer mat"
+  },
+  {
+   "file": "045.jpg",
+   "bn": "সমুদ্রে মসজিদ, সূর্যাস্ত",
+   "en": "mosque on the sea, sunset"
+  },
+  {
+   "file": "046.jpg",
+   "bn": "টুপি পরা মানুষ দোয়া করছে, কাছ থেকে",
+   "en": "man in prayer cap making dua, close-up"
+  },
+  {
+   "file": "047.jpg",
+   "bn": "মসজিদের ভেতর, খিলান, কার্পেট, উষ্ণ আলো",
+   "en": "inside mosque, arches, carpet, warm light"
+  },
+  {
+   "file": "048.jpg",
+   "bn": "মেঘলা গোধূলি আকাশ, দূরে মসজিদ",
+   "en": "cloudy dusk sky, mosque in the distance"
+  },
+  {
+   "file": "049.jpg",
+   "bn": "লণ্ঠন, কুরআন, রাত (৩)",
+   "en": "lantern and Quran, night"
+  },
+  {
+   "file": "050.jpg",
+   "bn": "পাহাড়ের চূড়ায় বসা মানুষ, সূর্যাস্ত (২)",
+   "en": "man sitting on mountain top, sunset"
+  },
+  {
+   "file": "051.jpg",
+   "bn": "মসজিদের গম্বুজ, গোলাপি ফুল, বসন্ত",
+   "en": "mosque dome, pink blossoms, spring"
+  },
+  {
+   "file": "052.jpg",
+   "bn": "কুরআন রেহালে, অন্ধকার, উষ্ণ আলো",
+   "en": "Quran on wooden stand, dark, warm light"
+  },
+  {
+   "file": "053.jpg",
+   "bn": "দোয়ায় হাত তোলা মানুষ, সূর্যাস্ত",
+   "en": "silhouette of man raising hands in dua, sunset"
+  },
+  {
+   "file": "054.jpg",
+   "bn": "মসজিদ, নীল আকাশ, দিন",
+   "en": "mosque, blue sky, day"
+  },
+  {
+   "file": "055.jpg",
+   "bn": "কুরআনের আরবি লেখা পাতা, কাছ থেকে",
+   "en": "page of Arabic Quran text, close-up"
+  },
+  {
+   "file": "056.jpg",
+   "bn": "বনের পথ, সূর্যের রশ্মি",
+   "en": "forest path, sun rays"
+  },
+  {
+   "file": "057.jpg",
+   "bn": "রঙিন কাচের জানালা, মসজিদে বসা মানুষ",
+   "en": "stained glass mosque windows, man sitting"
+  },
+  {
+   "file": "058.jpg",
+   "bn": "হাতে তসবিহ, অন্ধকার",
+   "en": "hand with prayer beads, dark"
+  },
+  {
+   "file": "059.jpg",
+   "bn": "মসজিদ, পানিতে প্রতিবিম্ব, দিন",
+   "en": "mosque, reflection in water, day"
+  },
+  {
+   "file": "060.jpg",
+   "bn": "টুপি পরা শিশু কুরআন পড়ছে (২)",
+   "en": "boy in prayer cap reading Quran"
+  },
+  {
+   "file": "061.jpg",
+   "bn": "লণ্ঠন, রাত, নীল ঝাপসা আলো",
+   "en": "lantern at night, blue bokeh lights"
+  },
+  {
+   "file": "062.jpg",
+   "bn": "পাহাড়ে দাঁড়ানো মানুষ, সূর্যোদয়",
+   "en": "man standing on mountain, sunrise"
+  },
+  {
+   "file": "063.jpg",
+   "bn": "কুরআনের মলাট, সোনালি ক্যালিগ্রাফি",
+   "en": "Quran cover with golden calligraphy"
+  },
+  {
+   "file": "064.jpg",
+   "bn": "মসজিদ, সূর্যাস্ত, পানিতে প্রতিবিম্ব (২)",
+   "en": "mosque at sunset, reflection in water"
+  },
+  {
+   "file": "065.jpg",
+   "bn": "হিজাব পরা নারী দোয়া করছে, শহর, ভোর",
+   "en": "woman in hijab making dua, city, dawn"
+  },
+  {
+   "file": "066.jpg",
+   "bn": "মসজিদের গম্বুজ, গোলাপি ফুল (২)",
+   "en": "mosque dome, pink blossoms"
+  },
+  {
+   "file": "067.jpg",
+   "bn": "দোয়ায় হাত তোলা মানুষ, সূর্যাস্ত (২)",
+   "en": "silhouette of man raising hands in dua, sunset"
+  },
+  {
+   "file": "068.jpg",
+   "bn": "খোলা কুরআন রেহালে, অন্ধকার",
+   "en": "open Quran on wooden stand, dark"
+  },
+  {
+   "file": "069.jpg",
+   "bn": "মসজিদের খিলান দরজায় বসা মানুষ, বাইরে আলো",
+   "en": "man sitting in ornate mosque archway, light outside"
+  },
+  {
+   "file": "070.jpg",
+   "bn": "তসবিহ কাছ থেকে, নকশা করা কাপড়",
+   "en": "prayer beads close-up, patterned cloth"
+  },
+  {
+   "file": "071.jpg",
+   "bn": "রাতে আলোকিত মসজিদ, পানিতে প্রতিবিম্ব",
+   "en": "lit mosque at night, reflection in water"
+  },
+  {
+   "file": "072.jpg",
+   "bn": "টুপি পরা শিশু পেছন থেকে",
+   "en": "boy in prayer cap seen from behind"
+  },
+  {
+   "file": "073.jpg",
+   "bn": "বরফ ঢাকা পাহাড়, হ্রদে প্রতিবিম্ব, দিন",
+   "en": "snowy mountain, lake reflection, day"
+  },
+  {
+   "file": "074.jpg",
+   "bn": "লণ্ঠন, কুরআন, অন্ধকার ঘর",
+   "en": "lantern and Quran, dark room"
+  },
+  {
+   "file": "075.jpg",
+   "bn": "মরুভূমি, বালিয়াড়িতে দাঁড়ানো মানুষ, বিকেল",
+   "en": "desert dunes, man standing, afternoon"
+  },
+  {
+   "file": "076.jpg",
+   "bn": "আল্লাহ নামের ক্যালিগ্রাফি, কাছ থেকে",
+   "en": "Allah calligraphy close-up"
+  },
+  {
+   "file": "077.jpg",
+   "bn": "জানালার আলোয় বসে কুরআন পড়ছে মানুষ",
+   "en": "man reading Quran in window light on prayer mat"
+  },
+  {
+   "file": "078.jpg",
+   "bn": "সমুদ্র, পাহাড়ি উপকূল, সূর্যাস্ত",
+   "en": "sea, rocky coast, sunset"
+  },
+  {
+   "file": "079.jpg",
+   "bn": "লণ্ঠন, কুরআন, তসবিহ, টেবিল",
+   "en": "lantern, Quran and prayer beads on table"
+  },
+  {
+   "file": "080.jpg",
+   "bn": "চাঁদ, মসজিদ, গোধূলি",
+   "en": "crescent moon, mosque silhouette, dusk"
+  },
+  {
+   "file": "081.jpg",
+   "bn": "শিশু কুরআন পড়ছে, কাছ থেকে",
+   "en": "boy reading Quran, close-up"
+  },
+  {
+   "file": "082.jpg",
+   "bn": "বনের পথ, সূর্যের আলো (২)",
+   "en": "forest path, sunlight"
+  },
+  {
+   "file": "083.jpg",
+   "bn": "কাবা শরিফ, তাওয়াফ, ভিড়",
+   "en": "Kaaba, Masjid al-Haram, tawaf crowd"
+  },
+  {
+   "file": "084.jpg",
+   "bn": "দোয়ায় হাত পেছন থেকে, মিনার, ভোর",
+   "en": "hands raised in dua seen from behind, minaret, dawn"
+  },
+  {
+   "file": "085.jpg",
+   "bn": "মসজিদের গম্বুজ ও মিনার, গোধূলি",
+   "en": "mosque dome and minaret, dusk"
+  },
+  {
+   "file": "086.jpg",
+   "bn": "পাহাড়ের কিনারায় বসা মানুষ, উপত্যকা",
+   "en": "man sitting on cliff edge, valley view"
+  },
+  {
+   "file": "087.jpg",
+   "bn": "খোলা কুরআন, তসবিহ, কাছ থেকে (২)",
+   "en": "open Quran with prayer beads, close-up"
+  },
+  {
+   "file": "088.jpg",
+   "bn": "মসজিদ, মিনার, লাল সূর্যাস্ত আকাশ",
+   "en": "mosque and minaret, red sunset sky"
+  },
+  {
+   "file": "089.jpg",
+   "bn": "লণ্ঠন, কুরআন, উষ্ণ আলো (৪)",
+   "en": "lantern and Quran, warm light"
+  },
+  {
+   "file": "090.jpg",
+   "bn": "মসজিদের ভেতর দোয়া, জানালার আলো",
+   "en": "man making dua inside mosque, window light"
+  },
+  {
+   "file": "091.jpg",
+   "bn": "সমুদ্রে নৌকা, সূর্যাস্ত",
+   "en": "boat on the sea, sunset"
+  },
+  {
+   "file": "092.jpg",
+   "bn": "কুরআনের মলাট, নীল-সোনালি",
+   "en": "Quran cover, blue and gold"
+  },
+  {
+   "file": "093.jpg",
+   "bn": "টুপি পরা মানুষ পেছন থেকে, মসজিদের ভেতর",
+   "en": "man in prayer cap seen from behind inside mosque"
+  },
+  {
+   "file": "094.jpg",
+   "bn": "মসজিদ, নাটকীয় সূর্যাস্ত আকাশ",
+   "en": "mosque, dramatic sunset sky"
+  },
+  {
+   "file": "095.jpg",
+   "bn": "লণ্ঠন, তসবিহ, অন্ধকার",
+   "en": "lantern and prayer beads, dark"
+  },
+  {
+   "file": "096.jpg",
+   "bn": "মসজিদ, সূর্যাস্ত, পানিতে প্রতিবিম্ব (৩)",
+   "en": "mosque at sunset, reflection in water"
+  },
+  {
+   "file": "097.jpg",
+   "bn": "দোয়ায় হাত তোলা মানুষ, সূর্যাস্ত, পাহাড়",
+   "en": "man raising hands in dua, sunset, mountains"
+  },
+  {
+   "file": "098.jpg",
+   "bn": "বনের পথ, সূর্যের রশ্মি (২)",
+   "en": "forest path, sun rays"
+  },
+  {
+   "file": "099.jpg",
+   "bn": "খোলা কুরআন, তসবিহ, কাছ থেকে (৩)",
+   "en": "open Quran with prayer beads, close-up"
+  },
+  {
+   "file": "100.jpg",
+   "bn": "রাত, চাঁদ, আলোকিত মসজিদ (২)",
+   "en": "night, crescent moon, lit mosque"
+  },
+  {
+   "file": "101.jpg",
+   "bn": "টুপি পরা শিশু দোয়া করছে",
+   "en": "boy in prayer cap making dua"
+  },
+  {
+   "file": "102.jpg",
+   "bn": "সমুদ্রে নৌকা, সূর্যাস্ত (২)",
+   "en": "boat on the sea, sunset"
+  },
+  {
+   "file": "103.jpg",
+   "bn": "তসবিহ, নকশা করা কাপড়, কাছ থেকে",
+   "en": "prayer beads on patterned cloth, close-up"
+  },
+  {
+   "file": "104.jpg",
+   "bn": "মসজিদ, গোধূলি, আলো জ্বলছে",
+   "en": "mosque at dusk, lights on"
+  },
+  {
+   "file": "105.jpg",
+   "bn": "পাহাড়ে দাঁড়ানো মানুষ, সূর্যাস্ত",
+   "en": "man standing on mountain, sunset"
+  }
+ ]
+}
