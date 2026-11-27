@@ -1,0 +1,35 @@
+{
+ "files": [
+  "s01.jpg",
+  "s02.jpg",
+  "s03.jpg",
+  "s04.jpg"
+ ],
+ "prompts": [
+  "Foreground: Crystal clear water droplets on a marble surface. Middle: Elegant mosque veranda with arched columns. Background: A bright, clear blue daytime sky with soft sunlight. Cinematic lighting, peaceful atmosphere.",
+  "Foreground: Macro view of serene water droplets. Middle: Intricate stone mosque balcony overlooking a courtyard. Background: Brilliant midday sun and a vast, luminous sky. Photorealistic, high detail, tranquil setting.",
+  "Foreground: Polished wooden prayer beads resting on a ledge. Middle: Lush, soft green foliage and vibrant leaves. Background: Ethereal light mist and a hazy, tranquil morning atmosphere. Soft focus, spiritual mood.",
+  "Foreground: A glowing golden lantern emitting warm light. Middle: A serene, lush garden with stone paths and greenery. Background: The first soft rays of dawn breaking over the horizon. Atmospheric, peaceful, high resolution."
+ ],
+ "style": "Style: Photorealistic cinematic realism. Palette: Luminous marble white, soft cerulean, warm amber, and lush emerald. Lighting: Ethereal morning glow with soft diffusion and golden hour rays. Recurring elements: Arched stone architecture, crystal water droplets, dark wood textures, and glowing lanterns. Atmosphere: Serene, spiritual, and tranquil. No living beings. High-resolution textures with shallow depth of field., cinematic film still, anamorphic lens, dramatic volumetric light, rich colour grading, shallow depth of field, sharp focus, 8k detail, masterpiece, empty scene without any people, no humans, no men, no women, no children, no faces, no hands, no body parts, no silhouettes, no animals",
+ "seed": 53228,
+ "scene_idx": [
+  0,
+  0,
+  1,
+  1,
+  2,
+  2,
+  3
+ ],
+ "sentences": [
+  "একটা কথা কি আজ কাউকে কষ্ট দিয়েছে?",
+  "জিহ্বা সামলে রাখলে অনেক গুনাহ থেকেই বাঁচা যায়।",
+  "কারও অনুপস্থিতিতে তার দোষ বলবেন না।",
+  "বরং নিজের ত্রুটি নিয়ে ভাবুন।",
+  "নীরবতা অনেক সময় সবচেয়ে বড় হেফাজত।",
+  "আমিন লিখুন।",
+  "এরকম আরও ভিডিও পেতে চাইলে এখনই সাবস্ক্রাইব করুন।"
+ ],
+ "library": {}
+}
