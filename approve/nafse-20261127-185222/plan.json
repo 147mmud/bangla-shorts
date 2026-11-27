@@ -1,0 +1,31 @@
+{
+ "files": [
+  "s01.jpg",
+  "s02.jpg",
+  "s03.jpg"
+ ],
+ "prompts": [
+  "Foreground shows a glowing ornate brass lantern casting warm light. Middle ground features a serene nocturnal grassy field. Background displays a deep starry night sky brimming with brilliant stars and cosmic nebula, cinematic atmospheric lighting.",
+  "Foreground: an intricate velvet prayer mat and open holy book on a wooden stand. Middle ground: soft golden ambient light streaming gracefully. Background: slow-moving clouds drifting across a twilight sky through an open arched window.",
+  "Foreground: a crystal-clear water stream flowing over smooth river pebbles. Middle ground: a lush green meadow bathed in morning mist. Background: a brilliant golden sunrise casting radiant light rays across the vibrant horizon."
+ ],
+ "style": "Cinematic photorealistic Islamic aesthetic. Rich palette of cosmic blues, deep indigos, glowing ambers, and radiant gold. Volumetric light, soft ambient glows, and golden sunrise rays create a tranquil, spiritual mood. Recurring motifs: ornate glowing brass lanterns, velvet prayer mats, arched stone architecture, crystal streams, and lush meadows. Completely free of humans, faces, calligraphy, or animals., cinematic film still, anamorphic lens, dramatic volumetric light, rich colour grading, shallow depth of field, sharp focus, 8k detail, masterpiece, empty scene without any people, no humans, no men, no women, no children, no faces, no hands, no body parts, no silhouettes, no animals",
+ "seed": 3104,
+ "scene_idx": [
+  0,
+  0,
+  1,
+  1,
+  2,
+  2
+ ],
+ "sentences": [
+  "নীরব রাত কি আপনাকে শূন্য মনে হয়?",
+  "এই একাকীত্বই রবের কাছাকাছি হওয়ার সেরা সময়।",
+  "কোলাহল দূরে রেখে নিজের অন্তরকে শুনুন।",
+  "তওবা ও আত্মচিন্তায় মন জুড়িয়ে যায়।",
+  "নিঃসঙ্গতাকে ইবাদতে বদলে দিন, শান্তি মিলবে।",
+  "আমিন লিখুন।"
+ ],
+ "library": {}
+}
