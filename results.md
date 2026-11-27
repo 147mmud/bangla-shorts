@@ -31,4 +31,3 @@
 | 2026-11-25 02:08 | rm-nafse-20261125-031932-1.txt | [download](https://github.com/147mmud/bangla-shorts/releases/download/short-rm-nafse-20261125-031932-1-20261125-023208/Duniyar-Jonno-Namaj-Charben-Na.mp4) | - |
 | 2026-11-25 20:03 | voiceonly-inner-peace.txt | [download](https://github.com/147mmud/bangla-shorts/releases/download/short-voiceonly-inner-peace-20261125-200802/Voiceover-Inner-Peace-Voice-Only-Not-For-Posting.mp4) | - |
 | 2026-11-26 20:30 | nafse-20261127-013709.txt (made on PC) | [download](https://github.com/147mmud/bangla-shorts/releases/download/short-pc-nafse-20261127-013709-20261126-203018/Sabrer-Odrishyo-Proshanti.mp4) | - |
-| 2026-11-26 23:35 | nafse-20261127-044207.txt | [download](https://github.com/147mmud/bangla-shorts/releases/download/short-nafse-20261127-044207-20261126-235922/Rijik-Niye-Hotash-Howar-Age-Ei-Hadisti-Monerakhun.mp4) | - |
