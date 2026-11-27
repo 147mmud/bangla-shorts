@@ -6,7 +6,6 @@ colors: #0b1d3a, #1e4f8a
 highlight: #ffd75e
 style: cinematic
 voice_engine: omnivoice
-maker: flow
 visuals: ai
 about: বাংলা ইসলামিক শর্টস: ঈমান, ধৈর্য, তওবা, নামাজ, আখলাক ও হৃদয় নরম করা উপদেশ
 tags: #youtubeshorts #foryou #viralvideo #short #love #new#আমল #ইসলামিক_ভিডিও
