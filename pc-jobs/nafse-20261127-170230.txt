@@ -1,0 +1,24 @@
+title: নীরব আর্তি আর চাওয়ার আদব #shorts
+channel: nafse
+channel_name: নফসে মুতমাইন্নাহ
+language: bn
+colors: #0b1d3a, #1e4f8a
+highlight: #ffd75e
+style: cinematic
+voice_engine: omnivoice
+maker: openmontage
+visuals: ai
+pick_images: [{"u":"https://image.pollinations.ai/prompt/Vertical%209%3A16%20background%2C%20serene%20dew-kissed%20leaves%20in%20foreground%2C%20a%20calm%20stream%20in%20the%20middle%2C%20misty%20mountains%20in%20the%20background%2C%20cinematic%20Islamic%20aesthetic%2C%20soft%20morning%20light%2C%20highly%20detailed%2C%20no%20text%2C%20no%20humans.%2C%20cinematic%20film%20still%2C%20dramatic%20warm%20light%2C%20shallow%20depth%20of%20field%2C%20no%20people%2C%20no%20faces%2C%20no%20animals%2C%20no%20text%2C%20vertical%209%3A16%20composition%2C%20highly%20detailed%2C%20no%20text%2C%20no%20letters%2C%20no%20watermark?width=1080&height=1920&seed=733940&nologo=true&model=flux"},{"u":"https://image.pollinations.ai/prompt/Vertical%209%3A16%20background%2C%20close-up%20of%20dew%20drops%20on%20vibrant%20green%20foliage%2C%20gentle%20mist%20drifting%20over%20a%20tranquil%20mountain%20stream%2C%20spiritual%20atmosphere%2C%20cinematic%20lighting%2C%20peaceful%20nature%2C%20no%20text%2C%20no%20humans.%2C%20cinematic%20film%20still%2C%20dramatic%20warm%20light%2C%20shallow%20depth%20of%20field%2C%20no%20people%2C%20no%20faces%2C%20no%20animals%2C%20no%20text%2C%20vertical%209%3A16%20composition%2C%20highly%20detailed%2C%20no%20text%2C%20no%20letters%2C%20no%20watermark?width=1080&height=1920&seed=931563&nologo=true&model=flux"},{"u":"https://image.pollinations.ai/prompt/Vertical%209%3A16%20background%2C%20a%20glowing%20candle%20flame%20in%20the%20foreground%2C%20an%20open%20Quran%20in%20the%20middle%2C%20deep%20night%20sky%20with%20stars%20in%20the%20background%2C%20warm%20flickering%20light%2C%20spiritual%2C%20no%20text%2C%20no%20humans.%2C%20cinematic%20film%20still%2C%20dramatic%20warm%20light%2C%20shallow%20depth%20of%20field%2C%20no%20people%2C%20no%20faces%2C%20no%20animals%2C%20no%20text%2C%20vertical%209%3A16%20composition%2C%20highly%20detailed%2C%20no%20text%2C%20no%20letters%2C%20no%20watermark?width=1080&height=1920&seed=402522&nologo=true&model=flux"},{"u":"https://image.pollinations.ai/prompt/Vertical%209%3A16%20background%2C%20macro%20view%20of%20soft%20candle%20wax%20melting%2C%20sacred%20Islamic%20text%20blurred%20in%20the%20background%2C%20serene%20nocturnal%20ambiance%2C%20deep%20shadows%20and%20golden%20highlights%2C%20no%20text%2C%20no%20humans.%2C%20cinematic%20film%20still%2C%20dramatic%20warm%20light%2C%20shallow%20depth%20of%20field%2C%20no%20people%2C%20no%20faces%2C%20no%20animals%2C%20no%20text%2C%20vertical%209%3A16%20composition%2C%20highly%20detailed%2C%20no%20text%2C%20no%20letters%2C%20no%20watermark?width=1080&height=1920&seed=970106&nologo=true&model=flux"},{"u":"https://image.pollinations.ai/prompt/Vertical%209%3A16%20background%2C%20calm%20water%20surface%20reflecting%20soft%20light%20in%20the%20foreground%2C%20a%20radiant%20beam%20of%20light%20in%20the%20middle%2C%20first%20dawn%20glow%20on%20the%20horizon%2C%20peaceful%2C%20no%20text%2C%20no%20humans.%2C%20cinematic%20film%20still%2C%20dramatic%20warm%20light%2C%20shallow%20depth%20of%20field%2C%20no%20people%2C%20no%20faces%2C%20no%20animals%2C%20no%20text%2C%20vertical%209%3A16%20composition%2C%20highly%20detailed%2C%20no%20text%2C%20no%20letters%2C%20no%20watermark?width=1080&height=1920&seed=844298&nologo=true&model=flux"}]
+about: বাংলা ইসলামিক শর্টস: ঈমান, ধৈর্য, তওবা, নামাজ, আখলাক ও হৃদয় নরম করা উপদেশ
+---
+[img: সামনে ঝকঝকে শিশিরভেজা পাতা, মাঝে শান্ত ঝরনার ধারা, পেছনে কুয়াশাচ্ছন্ন পাহাড় — ক্যামেরা: tilt down — ইফেক্ট: কুয়াশা ভেসে যাওয়া]
+হাত তুললেই কি সত্যিই চাওয়া হয়?
+আসল চাওয়া শুরু হয় নীরব অনুভবে।
+
+[img: সামনে মোমবাতির শিখা, মাঝে খোলা কুরআন, পেছনে গভীর রাতের আকাশ — ক্যামেরা: zoom in — ইফেক্ট: মোমবাতির আলো কাঁপা]
+প্রথমে রবের মহত্ত্ব স্বীকার করুন।
+তারপর নিঃশব্দে নিজের অক্ষমতা জানান।
+
+[img: সামনে শান্ত জলের আয়না, মাঝে আলোর রেখা, পেছনে ভোরের প্রথম আভা — ক্যামেরা: pan right — ইফেক্ট: আলোর রশ্মি]
+আদব ঠিক থাকলে চাওয়াও হালকা হয়।
+আমিন লিখুন।
