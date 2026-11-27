@@ -106,7 +106,6 @@ def pick(cid, scene_texts, scene_notes, cfg, video, skip=()):
         return [None] * n
     st = _state(d)
     recent = {f for _, fs in st["history"][-RECENT_VIDEOS:] for f in fs}
-    by_file = {it["file"]: it for it in items}
     fresh = [it for it in items if st["used"].get(it["file"], {}).get("round", 0) < st["round"] and it["file"] not in recent]
     want = [k for k in range(n) if k not in skip]
     cands = list(fresh)
@@ -143,21 +142,36 @@ def pick(cid, scene_texts, scene_notes, cfg, video, skip=()):
         (d / "used.json").write_text(json.dumps(st, ensure_ascii=False, indent=1), encoding="utf-8")
         write_status(d, items, st)
         return out
-    # remember the use; start a new round when every picture has been used
-    fresh_files = {it["file"] for it in fresh}
-    for f in taken:
-        r = st["round"] if f in fresh_files else st["round"] + 1
-        st["used"][f] = {"round": r, "at": _now(), "video": video}
-    if all(st["used"].get(f, {}).get("round", 0) >= st["round"] for f in by_file):
-        st["round"] += 1
-        st["passed"] = {}
-        log(f"All {len(by_file)} library pictures have been used - round {st['round']} starts")
-    st["history"] = (st["history"] + [[video, sorted(taken)]])[-20:]
-    (d / "used.json").write_text(json.dumps(st, ensure_ascii=False, indent=1), encoding="utf-8")
-    s = write_status(d, items, st)
+    s = _mark(d, items, st, taken, video)
     log(f"{len(taken)} picture(s) from your library: " + ", ".join(sorted(taken)) +
         f" | {s['left']} of {s['total']} still unused in this round")
     return out
+
+
+def _mark(d, items, st, taken, video):
+    """Remember that these pictures were used; start a new round when every picture has been used."""
+    for f in taken:
+        r = st["round"] if st["used"].get(f, {}).get("round", 0) < st["round"] else st["round"] + 1
+        st["used"][f] = {"round": r, "at": _now(), "video": video}
+    if all(st["used"].get(it["file"], {}).get("round", 0) >= st["round"] for it in items):
+        st["round"] += 1
+        st["passed"] = {}
+        log(f"All {len(items)} library pictures have been used - round {st['round']} starts")
+    st["history"] = (st["history"] + [[video, sorted(taken)]])[-20:]
+    (d / "used.json").write_text(json.dumps(st, ensure_ascii=False, indent=1), encoding="utf-8")
+    return write_status(d, items, st)
+
+
+def record(cid, paths, video):
+    """Pictures you chose yourself from the library (on the Shorts Studio page) count as used too."""
+    d, items = load(cid)
+    if not d:
+        return
+    names = {it["file"] for it in items}
+    taken = sorted({Path(p).name for p in paths if Path(p).parent.resolve() == d.resolve() and Path(p).name in names})
+    if taken:
+        s = _mark(d, items, _state(d), taken, video)
+        log(f"{len(taken)} library picture(s) you chose: " + ", ".join(taken) + f" | {s['left']} of {s['total']} still unused")
 
 
 def scene_texts_from(sentences, scene_idx, n):

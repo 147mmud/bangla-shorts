@@ -585,13 +585,22 @@ def parse_my_images(value):
         part = part.strip()
         if not part:
             continue
-        mode, _, rel = part.partition(":") if part.split(":", 1)[0].lower() in ("same", "like") else ("same", "", part)
+        mode, _, rel = part.partition(":") if part.split(":", 1)[0].lower() in ("same", "like", "ai") else ("same", "", part)
+        if mode.lower() == "ai":
+            out.append(("ai", None))
+            continue
         f = (ROOT / rel.strip()).resolve()
         if str(f).startswith(str(ROOT.resolve())) and f.is_file() and f.suffix.lower() in IMG_EXT:
             out.append((mode.lower(), f))
         else:
             log("Your picture was not found:", rel.strip())
     return out[:30]
+
+
+def _more_scenes(prompts, n, n_sent):
+    n = max(1, min(n, n_sent or n))
+    out = [prompts[min(len(prompts) - 1, int(k * len(prompts) / n))] for k in range(n)]
+    return out, [min(n - 1, int(i * n / max(1, n_sent))) for i in range(n_sent)]
 
 
 def make_ai_background(duration, sentences, scene_idx, prompts, cfg, tmp, cid, query):
@@ -610,6 +619,8 @@ def make_ai_background(duration, sentences, scene_idx, prompts, cfg, tmp, cid, q
         n = len(mine)
         prompts = [""] * n
         scene_idx = [min(n - 1, int(i * n / max(1, len(sentences)))) for i in range(len(sentences))]
+    if prompts and len(mine) > len(prompts):  # you gave more pictures than scenes: spread them evenly
+        prompts, scene_idx = _more_scenes(prompts, len(mine), len(sentences))
     if not prompts:
         n = max(4, min(12, round(duration / 5)))
         if mine:
@@ -674,7 +685,7 @@ def make_ai_background(duration, sentences, scene_idx, prompts, cfg, tmp, cid, q
     images = {}
     for k, i, a, b in shots:
         key = (k, i)
-        if k < len(mine):  # YOUR picture for this scene (in the order you gave them)
+        if k < len(mine) and mine[k][0] != "ai":  # YOUR picture for this scene (in the order you gave them)
             mode, f = mine[k]
             if mode == "same" or i > 0:
                 if i == 0:
@@ -899,6 +910,9 @@ def preview_images(name, sentences, scene_idx, scene_list, cfg, mine):
         shutil.rmtree(out)
     out.mkdir(parents=True)
     prompts = [_camera_free(p) for p in (scene_list or [])]
+    if prompts and len(mine) > len(prompts):  # you gave more pictures than scenes: spread them evenly
+        prompts, scene_idx = _more_scenes(prompts, len(mine), len(sentences))
+        scene_list = None
     style0 = ""
     if not prompts:
         est = max(8.0, sum(len(x) for x in sentences) / 13.0)  # about 13 letters a second
@@ -922,6 +936,7 @@ def preview_images(name, sentences, scene_idx, scene_list, cfg, mine):
     lib = [None] * len(prompts)
     try:
         import library
+        library.record(cfg.get("_cid", ""), [f for m, f in mine if m == "same"], name)
         has_own = {k for k, prm in enumerate(prompts) if own_image(prm) or k < len(mine)}
         lib = library.pick(cfg.get("_cid", ""), library.scene_texts_from(sentences, scene_idx, len(prompts)),
                            [_camera_free(x) for x in (scene_list or [])], cfg, name, skip=has_own)
@@ -941,7 +956,7 @@ def preview_images(name, sentences, scene_idx, scene_list, cfg, mine):
             Image.open(own).convert("RGB").save(f, "JPEG", quality=90)
             log(f"{'Library' if f.name in from_lib else 'Your'} picture for scene {k + 1}: {Path(own).name}")
         else:
-            if k < len(mine):  # "like": a new picture that looks like yours
+            if k < len(mine) and mine[k][0] == "like":  # a new picture that looks like yours
                 try:
                     prm = ai_tools.describe_image(mine[k][1], cfg)
                 except Exception as e:  # noqa: BLE001
@@ -1037,6 +1052,11 @@ def make_short(script_path: Path, cfg=None, out_dir: Path = None):
             log(f"{len(picks)} picture(s) chosen on the page")
         mine = [] if approved else parse_my_images(meta.get("my_images", ""))
         if mine:
+            try:
+                import library
+                library.record(cid, [f for m, f in mine if m == "same"], name)
+            except Exception as e:  # noqa: BLE001
+                log("Library use not recorded:", str(e)[:120])
             cfg["_mine"] = mine
             cfg["_mine_rest"] = str(meta.get("my_rest", "ai")).strip().lower()
             log(f"{len(mine)} of your own picture(s) given "
