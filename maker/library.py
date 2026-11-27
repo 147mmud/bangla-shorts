@@ -56,8 +56,13 @@ def _state(d):
     return st
 
 
+def _is_cta(it):
+    """Subscribe / ending pictures (\"cta\": true in index.json): may go in every video, last scene only."""
+    return bool(it.get("cta"))
+
+
 def write_status(d, items, st):
-    files = [it["file"] for it in items]
+    files = [it["file"] for it in items if not _is_cta(it)]
     left = sum(1 for f in files if st["used"].get(f, {}).get("round", 0) < st["round"])
     status = {"channel": d.name, "total": len(files), "left": left, "round": st["round"],
               "warn_at": WARN_AT, "warn": left <= WARN_AT, "updated": _now()}
@@ -70,6 +75,8 @@ def _ask_ai(scenes, cands, cfg):
     lines_s = "\n".join(f"{i + 1}. said: {s['text'][:300]}" + (f" | scene note: {s['note'][:200]}" if s.get("note") else "")
                         for i, s in enumerate(scenes))
     lines_c = "\n".join(f"{it['file'][:-4]}: {it.get('en') or it.get('bn')}" + (" (used before)" if it.get("_old") else "")
+                        + (" [SUBSCRIBE picture: use it only for the LAST scene, and only when that scene asks viewers "
+                           "to subscribe/share/like/say Ameen]" if _is_cta(it) else "")
                         for it in cands)
     data = ai_tools.llm([
         {"role": "system", "content": "You choose background pictures for a YouTube Short. Reply with JSON only."},
@@ -105,6 +112,8 @@ def pick(cid, scene_texts, scene_notes, cfg, video, skip=()):
         log("Script was sent before the picture library started - AI pictures as before")
         return [None] * n
     st = _state(d)
+    ctas = [it for it in items if _is_cta(it)]
+    items = [it for it in items if not _is_cta(it)]
     recent = {f for _, fs in st["history"][-RECENT_VIDEOS:] for f in fs}
     fresh = [it for it in items if st["used"].get(it["file"], {}).get("round", 0) < st["round"] and it["file"] not in recent]
     want = [k for k in range(n) if k not in skip]
@@ -113,6 +122,8 @@ def pick(cid, scene_texts, scene_notes, cfg, video, skip=()):
         old = sorted((it for it in items if it not in fresh and it["file"] not in recent),
                      key=lambda it: st["used"].get(it["file"], {}).get("at", ""))
         cands += [{**it, "_old": True} for it in old[:max(len(want) * 3, 12) - len(fresh)]]
+    if want and want[-1] == n - 1:
+        cands += ctas  # subscribe pictures: always offered (last scene only), never "used up"
     if not want or not cands:
         return [None] * n
     scenes = [{"text": scene_texts[k], "note": (scene_notes[k] if k < len(scene_notes) else "") or ""} for k in want]
@@ -133,12 +144,20 @@ def pick(cid, scene_texts, scene_notes, cfg, video, skip=()):
                     st["used"][it["file"]] = {"round": st["round"], "at": _now(), "video": "(skipped - did not fit)"}
                     st["passed"].pop(it["file"], None)
     out, taken = [None] * n, set()
+    cta_files = {it["file"] for it in ctas}
     for k, f in zip(want, chosen):
+        if f in cta_files and k != n - 1:
+            continue  # a subscribe picture only goes at the end
         if f and f in allowed and f not in taken:
             out[k] = d / f
             taken.add(f)
+    cta_used = taken & cta_files
+    taken -= cta_files
+    if cta_used:
+        log("Subscribe picture for the last scene: " + ", ".join(sorted(cta_used)))
     if not taken:
-        log("No library picture fits this script")
+        if not cta_used:
+            log("No library picture fits this script")
         (d / "used.json").write_text(json.dumps(st, ensure_ascii=False, indent=1), encoding="utf-8")
         write_status(d, items, st)
         return out
@@ -167,7 +186,8 @@ def record(cid, paths, video):
     d, items = load(cid)
     if not d:
         return
-    names = {it["file"] for it in items}
+    names = {it["file"] for it in items if not _is_cta(it)}
+    items = [it for it in items if not _is_cta(it)]
     taken = sorted({Path(p).name for p in paths if Path(p).parent.resolve() == d.resolve() and Path(p).name in names})
     if taken:
         s = _mark(d, items, _state(d), taken, video)

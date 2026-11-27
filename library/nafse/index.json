@@ -1,6 +1,6 @@
 {
  "channel": "nafse",
- "about": "Pictures you chose for this channel. file = picture in this folder, bn/en = what is in it. Add new pictures: put the jpg here and add a line.",
+ "about": "Pictures you chose for this channel. file = picture in this folder, bn/en = what is in it. Add new pictures: put the jpg here and add a line. Pictures with \"cta\": true are subscribe/ending pictures: offered for the last scene of every video, may repeat, not counted in rounds.",
  "items": [
   {
    "file": "001.jpg",
@@ -516,6 +516,12 @@
    "file": "105.jpg",
    "bn": "পাহাড়ে দাঁড়ানো মানুষ, সূর্যাস্ত",
    "en": "man standing on mountain, sunset"
+  },
+  {
+   "file": "106.jpg",
+   "cta": true,
+   "bn": "সাবস্ক্রাইব ছবি — মরুভূমির রাতে পাগড়ি পরা বৃদ্ধ, আঙুল উঁচু, উপরে লাল SUBSCRIBE NOW বাটন; শুধু শেষ দৃশ্যে (সাবস্ক্রাইব / শেয়ার / আমিন বলার সময়)",
+   "en": "SUBSCRIBE picture - elderly turbaned man raising one finger, desert night with crescent moon, red SUBSCRIBE NOW button at top; ONLY for the last scene (call to subscribe / share / say Ameen)"
   }
  ]
 }
