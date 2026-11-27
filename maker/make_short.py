@@ -834,6 +834,125 @@ def animate_shots(shots, images, duration, tmp):
 
 
 # ------------------------------------------------------------------ main ----
+class NeedsApproval(Exception):
+    """The pictures are made and wait for your OK in Shorts Studio (approve/<name>/)."""
+
+
+NO_PEOPLE = ("empty scene without any people, no humans, no men, no women, no children, no faces, "
+             "no hands, no body parts, no silhouettes, no animals")
+
+
+def _camera_free(p):
+    """'[img: front lantern ... — ক্যামেরা: zoom in — ইফেক্ট: rain]' -> only the picture part."""
+    return re.split(r"\s+[—–-]+\s*(?:ক্যামেরা|camera|ইফেক্ট|effect)\s*:", p, flags=re.I)[0].strip(" —–-")
+
+
+def english_prompts(prompts, cfg):
+    """Scene notes written in Bangla -> clear English prompts for the picture AI (same order)."""
+    import ai_tools
+    need = [i for i, p in enumerate(prompts) if re.search(r"[^\x00-\x7f]", p) and not p.lower().startswith("file:")]
+    if not need:
+        return prompts
+    numbered = "\n".join(f"{n + 1}. {prompts[i]}" for n, i in enumerate(need))
+    try:
+        data = ai_tools.llm([
+            {"role": "system", "content": "You write prompts for an AI image generator. Reply with JSON only."},
+            {"role": "user", "content":
+                "Translate each numbered scene description into ONE vivid English image prompt (max 40 words), "
+                "keeping foreground / middle / background. No text in the image. " + ai_tools._channel_rules(cfg) +
+                f'\nReturn JSON: {{"prompts": [...]}} with exactly {len(need)} prompts.\n\n' + numbered}],
+            want_json=True, temperature=0.3)
+        got = [str(x) for x in data.get("prompts", [])]
+    except Exception as e:  # noqa: BLE001
+        log("Could not translate the scene notes, using them as they are ->", str(e)[:120])
+        got = []
+    out = list(prompts)
+    for n, i in enumerate(need):
+        if n < len(got) and got[n].strip():
+            out[i] = got[n].strip()
+    return out
+
+
+def is_islamic(cfg):
+    import ai_tools
+    return "NO humans" in ai_tools._channel_rules(cfg)
+
+
+def preview_images(name, sentences, scene_idx, scene_list, cfg, mine):
+    """Step 1 of a short that needs your OK: make ONE picture per scene, save them in approve/<name>/
+    with plan.json, and stop. Shorts Studio shows them; after your OK the video is made from exactly these."""
+    import ai_tools
+    out = ROOT / "approve" / name
+    if out.exists():
+        shutil.rmtree(out)
+    out.mkdir(parents=True)
+    prompts = [_camera_free(p) for p in (scene_list or [])]
+    style0 = ""
+    if not prompts:
+        est = max(8.0, sum(len(x) for x in sentences) / 13.0)  # about 13 letters a second
+        n = max(3, min(12, round(est / 5)))
+        if mine:
+            n = min(max(n, len(mine)), max(1, len(sentences)))
+        groups, prompts, style0 = ai_tools.scene_prompts(sentences, cfg, n)
+        scene_idx = []
+        for gi, g in enumerate(groups):
+            scene_idx += [gi] * len(g)
+        scene_idx = (scene_idx + [len(groups) - 1] * len(sentences))[:len(sentences)]
+    prompts = english_prompts(prompts, cfg)
+    try:
+        bible = ai_tools.look_sheet(prompts, cfg)
+    except Exception as e:  # noqa: BLE001
+        log("Look sheet skipped:", str(e)[:120])
+        bible = ""
+    extra = NO_PEOPLE if is_islamic(cfg) else ""
+    style = ", ".join(x for x in (bible, style0, ai_tools.quality_words(cfg), cfg.get("ai_image_style", ""), extra) if x)
+    seed = random.randint(1, 99999)
+    files = []
+    for k, prm in enumerate(prompts):
+        f = out / f"s{k + 1:02d}.jpg"
+        own = own_image(prm)
+        if k < len(mine) and mine[k][0] == "same":
+            own = mine[k][1]
+        if own:
+            from PIL import Image
+            Image.open(own).convert("RGB").save(f, "JPEG", quality=90)
+            log(f"Your picture for scene {k + 1}: {Path(own).name}")
+        else:
+            if k < len(mine):  # "like": a new picture that looks like yours
+                try:
+                    prm = ai_tools.describe_image(mine[k][1], cfg)
+                except Exception as e:  # noqa: BLE001
+                    log("Could not read your picture ->", str(e)[:120])
+            log(f"Picture {k + 1}/{len(prompts)}: {prm[:90]}")
+            if not ai_tools.ai_image(prm, f, seed=seed + k * 7, style=style):
+                log(f"Picture {k + 1} could not be made - press 🔄 for it in Shorts Studio")
+        files.append(f.name)
+        prompts[k] = prm
+    (out / "plan.json").write_text(json.dumps({
+        "files": files, "prompts": prompts, "style": style, "seed": seed,
+        "scene_idx": scene_idx, "sentences": sentences,
+    }, ensure_ascii=False, indent=1), encoding="utf-8")
+    log(f"{len(files)} picture(s) are waiting for your OK in Shorts Studio (approve/{name}/)")
+
+
+def approved_scenes(meta, sentences, scene_idx):
+    """approved_images: approve/<name>  ->  the exact approved pictures, one per scene."""
+    rel = str(meta.get("approved_images", "")).strip().strip("/")
+    d = (ROOT / rel).resolve()
+    if not rel.startswith("approve/") or not str(d).startswith(str(ROOT.resolve())) or not (d / "plan.json").is_file():
+        return None, scene_idx
+    plan = json.loads((d / "plan.json").read_text(encoding="utf-8"))
+    files = [f for f in plan.get("files", []) if (d / f).is_file()]
+    if not files:
+        return None, scene_idx
+    prompts = [f"file: {rel}/{f}" for f in files]
+    idx = plan.get("scene_idx") or []
+    if len(idx) != len(sentences) or (idx and max(idx) >= len(files)):
+        n = len(files)  # the script changed: spread the pictures evenly
+        idx = [min(n - 1, int(i * n / max(1, len(sentences)))) for i in range(len(sentences))]
+    return prompts, idx
+
+
 def make_short(script_path: Path, cfg=None, out_dir: Path = None):
     cfg = cfg or load_config()
     out_dir = out_dir or ROOT / "output"
@@ -849,6 +968,16 @@ def make_short(script_path: Path, cfg=None, out_dir: Path = None):
     style = cfg["_style"]
     log(f"=== {name}: {len(sentences)} sentences | channel: {cid or 'default'} "
         f"({cfg['channel_name']}) | language: {cfg['language']} | style: {style} ===")
+
+    # pictures for this channel need your OK first (approve_images: true in config.yml)
+    approved, appr_idx = approved_scenes(meta, sentences, scene_idx)
+    if approved:
+        scene_list, scene_idx = approved, appr_idx
+        log(f"Using your {len(approved)} approved picture(s) from {meta.get('approved_images')}")
+    elif cfg.get("approve_images") and not meta.get("flow_clips") and not meta.get("pick_images"):
+        cfg["about"] = meta.get("about", cfg.get("about", ""))
+        preview_images(name, sentences, scene_idx, scene_list, cfg, parse_my_images(meta.get("my_images", "")))
+        raise NeedsApproval(name)
 
     tmp = Path(tempfile.mkdtemp(prefix="short_"))
     try:
@@ -882,7 +1011,7 @@ def make_short(script_path: Path, cfg=None, out_dir: Path = None):
         if picks:
             cfg["_picks"] = picks
             log(f"{len(picks)} picture(s) chosen on the page")
-        mine = parse_my_images(meta.get("my_images", ""))
+        mine = [] if approved else parse_my_images(meta.get("my_images", ""))
         if mine:
             cfg["_mine"] = mine
             cfg["_mine_rest"] = str(meta.get("my_rest", "ai")).strip().lower()

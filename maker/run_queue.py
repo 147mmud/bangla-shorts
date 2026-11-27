@@ -12,7 +12,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from make_short import ROOT, load_config, log, make_short  # noqa: E402
+from make_short import ROOT, NeedsApproval, load_config, log, make_short  # noqa: E402
 
 
 def git(*args, check=True):
@@ -20,7 +20,7 @@ def git(*args, check=True):
 
 
 def save_progress(message):
-    paths = [p for p in ("scripts", "voice", "results.md", "remake", "feeds", "flow-jobs", "flow-clips", "meta") if (ROOT / p).exists()]
+    paths = [p for p in ("scripts", "voice", "results.md", "remake", "feeds", "flow-jobs", "flow-clips", "meta", "approve") if (ROOT / p).exists()]
     git("add", "-A", *paths, check=False)
     if git("diff", "--cached", "--quiet", check=False).returncode == 0:
         return
@@ -148,6 +148,20 @@ def cleanup_flow(script):
             subprocess.run(["rm", "-rf", str(ROOT / rel)])
 
 
+def cleanup_approved(script):
+    """The approved pictures are inside the finished video now - their folder is no longer needed."""
+    import re
+    done = ROOT / "scripts" / "done" / script.name
+    try:
+        head = done.read_text(encoding="utf-8").split("\n---", 1)[0]
+    except OSError:
+        return
+    m = re.search(r"^\s*approved_images\s*:\s*(approve/[\w.\-]+)\s*$", head, re.M)
+    if m and (ROOT / m.group(1)).exists():
+        subprocess.run(["git", "rm", "-r", "-q", "--ignore-unmatch", m.group(1)], cwd=ROOT)
+        subprocess.run(["rm", "-rf", str(ROOT / m.group(1))])
+
+
 def save_post_info(info, link):
     """Title / description / keywords of every video, so Shorts Studio can show them for uploading by hand."""
     import json
@@ -232,8 +246,13 @@ def main():
             script.rename(ROOT / "scripts" / "done" / script.name)
             cleanup_pictures(script)
             cleanup_flow(script)
+            cleanup_approved(script)
             add_result(f"| {when} | {script.name} | {'[download](' + link + ')' if link else 'see Actions artifact'} | {yt or '-'} |")
             save_progress(f"Made short: {script.name} [skip ci]")
+        except NeedsApproval:
+            # pictures are made; the script waits next to them until you press "অনুমোদন দিন" in Shorts Studio
+            script.rename(ROOT / "approve" / script.stem / "script.txt")
+            save_progress(f"Pictures waiting for approval: {script.name} [skip ci]")
         except Exception as e:
             failures += 1
             traceback.print_exc()
