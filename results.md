@@ -38,3 +38,4 @@
 | 2026-11-27 14:18 | nafse-20261127-175653.txt | [download](https://github.com/147mmud/bangla-shorts/releases/download/short-nafse-20261127-175653-20261127-142222/Nishshartho-Chaoyar-Shokti.mp4) | - |
 | 2026-11-27 14:22 | nafse-20261127-180344.txt | [download](https://github.com/147mmud/bangla-shorts/releases/download/short-nafse-20261127-180344-20261127-142659/Pordahin-Kobuler-Muhurto.mp4) | - |
 | 2026-11-27 14:27 | nafse-20261127-184733.txt | [download](https://github.com/147mmud/bangla-shorts/releases/download/short-nafse-20261127-184733-20261127-143219/Hisaber-Age-Nijer-Hisab.mp4) | - |
+| 2026-11-27 14:32 | nafse-20261127-184954.txt | [download](https://github.com/147mmud/bangla-shorts/releases/download/short-nafse-20261127-184954-20261127-143822/Kothar-Lagam-O-Nirobotar-Hefazot.mp4) | - |
