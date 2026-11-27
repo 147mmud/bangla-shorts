@@ -20,7 +20,7 @@ def git(*args, check=True):
 
 
 def save_progress(message):
-    paths = [p for p in ("scripts", "voice", "results.md", "remake", "feeds", "flow-jobs", "flow-clips", "meta", "approve") if (ROOT / p).exists()]
+    paths = [p for p in ("scripts", "voice", "results.md", "remake", "feeds", "flow-jobs", "flow-clips", "meta", "approve", "library") if (ROOT / p).exists()]
     git("add", "-A", *paths, check=False)
     if git("diff", "--cached", "--quiet", check=False).returncode == 0:
         return

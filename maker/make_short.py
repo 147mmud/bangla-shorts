@@ -627,6 +627,18 @@ def make_ai_background(duration, sentences, scene_idx, prompts, cfg, tmp, cid, q
         for gi, g in enumerate(groups):
             scene_idx += [gi] * len(g)
         scene_idx = (scene_idx + [len(groups) - 1] * len(sentences))[:len(sentences)]
+    # pictures from your library (library/<channel>/) for scenes that have no picture yet
+    if not picks and prompts and not all(own_image(p) for p in prompts):
+        try:
+            import library
+            has_own = {k for k, p in enumerate(prompts) if own_image(p) or k < len(mine)}
+            lib = library.pick(cid, library.scene_texts_from(sentences, scene_idx, len(prompts)),
+                               [_camera_free(p) for p in prompts], cfg, cfg.get("_name", ""), skip=has_own)
+            for k, f in enumerate(lib):
+                if f:
+                    prompts[k] = "file: " + str(f.relative_to(ROOT))
+        except Exception as e:  # noqa: BLE001
+            log("Library skipped:", str(e)[:150])
     # one fixed look (same characters, same art style) + high-quality words for every AI picture
     bible = ""
     if not picks:
@@ -907,16 +919,27 @@ def preview_images(name, sentences, scene_idx, scene_list, cfg, mine):
     extra = NO_PEOPLE if is_islamic(cfg) else ""
     style = ", ".join(x for x in (bible, style0, ai_tools.quality_words(cfg), cfg.get("ai_image_style", ""), extra) if x)
     seed = random.randint(1, 99999)
-    files = []
+    lib = [None] * len(prompts)
+    try:
+        import library
+        has_own = {k for k, prm in enumerate(prompts) if own_image(prm) or k < len(mine)}
+        lib = library.pick(cfg.get("_cid", ""), library.scene_texts_from(sentences, scene_idx, len(prompts)),
+                           [_camera_free(x) for x in (scene_list or [])], cfg, name, skip=has_own)
+    except Exception as e:  # noqa: BLE001
+        log("Library skipped:", str(e)[:150])
+    files, from_lib = [], {}
     for k, prm in enumerate(prompts):
         f = out / f"s{k + 1:02d}.jpg"
         own = own_image(prm)
         if k < len(mine) and mine[k][0] == "same":
             own = mine[k][1]
+        if not own and lib[k]:
+            own = lib[k]
+            from_lib[f.name] = lib[k].name
         if own:
             from PIL import Image
             Image.open(own).convert("RGB").save(f, "JPEG", quality=90)
-            log(f"Your picture for scene {k + 1}: {Path(own).name}")
+            log(f"{'Library' if f.name in from_lib else 'Your'} picture for scene {k + 1}: {Path(own).name}")
         else:
             if k < len(mine):  # "like": a new picture that looks like yours
                 try:
@@ -930,7 +953,7 @@ def preview_images(name, sentences, scene_idx, scene_list, cfg, mine):
         prompts[k] = prm
     (out / "plan.json").write_text(json.dumps({
         "files": files, "prompts": prompts, "style": style, "seed": seed,
-        "scene_idx": scene_idx, "sentences": sentences,
+        "scene_idx": scene_idx, "sentences": sentences, "library": from_lib,
     }, ensure_ascii=False, indent=1), encoding="utf-8")
     log(f"{len(files)} picture(s) are waiting for your OK in Shorts Studio (approve/{name}/)")
 
@@ -965,6 +988,7 @@ def make_short(script_path: Path, cfg=None, out_dir: Path = None):
     name = script_path.stem
     cfg, cid = resolve_settings(cfg, meta)
     cfg["_first_sentence"] = sentences[0] if sentences else ""
+    cfg["_cid"], cfg["_name"] = cid, name
     style = cfg["_style"]
     log(f"=== {name}: {len(sentences)} sentences | channel: {cid or 'default'} "
         f"({cfg['channel_name']}) | language: {cfg['language']} | style: {style} ===")
