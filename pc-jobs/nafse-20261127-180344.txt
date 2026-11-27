@@ -1,0 +1,27 @@
+title: পর্দাহীন কবুলের মুহূর্ত | যে দুআ ফিরিয়ে দেওয়া হয় না #shorts
+channel: nafse
+channel_name: নফসে মুতমাইন্নাহ
+language: bn
+colors: #0b1d3a, #1e4f8a
+highlight: #ffd75e
+style: normal
+voice_engine: omnivoice
+maker: openmontage
+visuals: ai
+my_images: same:library/nafse/017.jpg | same:library/nafse/064.jpg | same:library/nafse/034.jpg | ai:-
+my_rest: ai
+about: বাংলা ইসলামিক শর্টস: ঈমান, ধৈর্য, তওবা, নামাজ, আখলাক ও হৃদয় নরম করা উপদেশ
+tags: youtubeshorts ,foryou,viralvideo,vlog,reels,short,quran,love,new
+description: যে দুআ ফিরিয়ে দেওয়া হয় না
+---
+[img: সামনে সন্ধ্যার আকাশে তারা, মাঝে শান্ত মরুভূমির বালু, পেছনে নীলচে গোধূলি — ক্যামেরা: rise up — ইফেক্ট: তারা ঝিকমিক]
+কিছু ডাক আকাশে পৌঁছাতে দেরি করে না।
+আপনি কি সেই মুহূর্তগুলো চেনেন?
+
+[img: সামনে প্রবহমান নদীর জল, মাঝে সোনালি বালুচর, পেছনে উজ্জ্বল সূর্যোদয় — ক্যামেরা: pan left — ইফেক্ট: পানির ঢেউ]
+রোযাদারের ইফতারের ঠিক আগের মুহূর্ত।
+আর অবিচারের শিকার মজলুমের কান্না।
+
+[img: সামনে আলোকিত কুরআন, মাঝে নরম জায়নামাজ, পেছনে ভোরের উজ্জ্বল আলো — ক্যামেরা: zoom out — ইফেক্ট: আলোর রশ্মি]
+এই দুআগুলোর মাঝে কোনো পর্দা থাকে না।
+আমিন লিখুন।
