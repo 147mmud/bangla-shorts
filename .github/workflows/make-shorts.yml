@@ -3,7 +3,7 @@ name: Make Bangla Shorts
 on:
   # 1) Runs automatically when you add a script to the "scripts" folder
   push:
-    paths: ["scripts/*.txt", "remake/*.txt"]
+    paths: ["scripts/*.txt", "remake/*.txt", "approve/*/redo.json"]
   # 2) "Run workflow" button on the Actions tab
   workflow_dispatch:
   # 3) Every day at 9:00 AM Bangladesh time, to finish any scripts still waiting
@@ -29,8 +29,8 @@ jobs:
       - name: Any scripts waiting?
         id: check
         run: |
-          n=$( (ls scripts/*.txt remake/*.txt 2>/dev/null || true) | wc -l )
-          if [ "$n" -gt 0 ]; then echo "go=yes" >> "$GITHUB_OUTPUT"; (ls scripts/*.txt remake/*.txt 2>/dev/null || true);
+          n=$( (ls scripts/*.txt remake/*.txt approve/*/redo.json 2>/dev/null || true) | wc -l )
+          if [ "$n" -gt 0 ]; then echo "go=yes" >> "$GITHUB_OUTPUT"; (ls scripts/*.txt remake/*.txt approve/*/redo.json 2>/dev/null || true);
           else echo "go=no" >> "$GITHUB_OUTPUT"; echo "No scripts waiting - nothing to do."; fi
 
       - name: Install video tools and Bangla font
@@ -74,6 +74,7 @@ jobs:
         run: |
           git config user.name "shorts-bot"
           git config user.email "shorts-bot@users.noreply.github.com"
+          python maker/approve.py
           python maker/run_queue.py
 
       - name: Keep the videos as a backup download (7 days)
