@@ -41,3 +41,4 @@
 | 2026-11-27 14:32 | nafse-20261127-184954.txt | [download](https://github.com/147mmud/bangla-shorts/releases/download/short-nafse-20261127-184954-20261127-143822/Kothar-Lagam-O-Nirobotar-Hefazot.mp4) | - |
 | 2026-11-28 02:53 | rm-nafse-20261127-160634-1.txt | [download](https://github.com/147mmud/bangla-shorts/releases/download/short-rm-nafse-20261127-160634-1-20261128-031744/Ke-Apnar-Porom-Apon.mp4) | - |
 | 2026-11-28 03:22 | rm-nafse-20261127-160448-1.txt | [download](https://github.com/147mmud/bangla-shorts/releases/download/short-rm-nafse-20261127-160448-1-20261128-033445/Jokhon-Sob-Poth-Bondho-Hoye-Jay.mp4) | - |
+| 2026-11-28 03:34 | rm-nafse-20261127-160512-1.txt | [download](https://github.com/147mmud/bangla-shorts/releases/download/short-rm-nafse-20261127-160512-1-20261128-034350/Bismillahir-Ek-Ashchorjo-Oloukik-Borkot.mp4) | - |
